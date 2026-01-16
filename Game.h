@@ -17,6 +17,10 @@ public:
 	void Draw(float deltaTime, float totalTime);
 	void OnResize();
 
+	// Helper functions
+	void UpdateImGui(float deltaTime, float totalTime);
+	void BuildUI();
+
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
@@ -36,5 +40,13 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+
+	// ImGui customization
+	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
+	bool showDemoWindow;
+
+	// ImGui tests
+	char testTextBox[128];
+	int testSlider;
 };
 
