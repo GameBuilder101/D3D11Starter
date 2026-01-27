@@ -1,7 +1,9 @@
 #pragma once
 
+#include <memory>
 #include <d3d11.h>
 #include <wrl/client.h>
+#include "Mesh.h"
 
 class Game
 {
@@ -20,6 +22,7 @@ public:
 	// Helper functions
 	void UpdateImGui(float deltaTime, float totalTime);
 	void BuildUI();
+	void BuildMeshUI(Mesh* mesh, const char name[]);
 
 private:
 
@@ -48,5 +51,10 @@ private:
 	// ImGui tests
 	char testTextBox[128];
 	int testSlider;
+
+	// Test meshes
+	std::shared_ptr<Mesh> testTriMesh;
+	std::shared_ptr<Mesh> testQuadMesh;
+	std::shared_ptr<Mesh> testPentagonMesh;
 };
 
