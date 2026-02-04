@@ -4,6 +4,7 @@
 #include "Input.h"
 #include "PathHelpers.h"
 #include "Window.h"
+#include "ConstantBuffer.h"
 
 #include <DirectXMath.h>
 
@@ -50,6 +51,24 @@ Game::Game()
 		//    these calls will need to happen multiple times per frame
 		Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
 		Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
+	}
+
+	// Create a constant buffer
+	{
+		// Calculate the size of the main constant buffer
+		unsigned int size = sizeof(ExternalVertexData);
+		size = (size + 15) / 16 * 16;
+
+		// Describe the constant buffer
+		D3D11_BUFFER_DESC cbd = {}; // Sets struct to all zeros
+		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		cbd.ByteWidth = size; // Must be a multiple of 16
+		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		cbd.Usage = D3D11_USAGE_DYNAMIC;
+
+		Graphics::Device->CreateBuffer(&cbd, 0, constBuffer.GetAddressOf());
+		// Bind the buffer to register 0 for now
+		Graphics::Context->VSSetConstantBuffers(0, 1, constBuffer.GetAddressOf());
 	}
 
 	// Initialize ImGui itself & platform/renderer backends
@@ -272,16 +291,6 @@ void Game::BuildUI()
 	// Toggles the demo window
 	if (ImGui::Button("Toggle ImGui demo window"))
 		showDemoWindow = !showDemoWindow;
-	
-	// Test a toggle header
-	if (ImGui::CollapsingHeader("Test toggle header"))
-	{
-		// Test a text box
-		ImGui::InputText("Text text box", testTextBox, 128);
-
-		// Test a slider
-		ImGui::SliderInt("Test slider", &testSlider, 0, 100);
-	}
 
 	// Show a panel for displaying debug information on the test meshes
 	if (ImGui::CollapsingHeader("Meshes"))
@@ -290,6 +299,23 @@ void Game::BuildUI()
 		BuildMeshUI(testQuadMesh.get(), "Mesh: Quad");
 		BuildMeshUI(testPentagonMesh.get(), "Mesh: Pentagon");
 	}
+
+	// Show a panel for modifying external vertex data
+	if (ImGui::CollapsingHeader("Constant Buffer Vertex Data"))
+	{
+		ImGui::ColorEdit4("Color Tint", vertexColorTint);
+		ImGui::DragFloat3("Offset", vertexOffset);
+	}
+
+	// Test a toggle header
+	/*if (ImGui::CollapsingHeader("Test toggle header"))
+	{
+		// Test a text box
+		ImGui::InputText("Text text box", testTextBox, 128);
+
+		// Test a slider
+		ImGui::SliderInt("Test slider", &testSlider, 0, 100);
+	}*/
 
 	ImGui::End(); // Ends the current window
 
@@ -325,6 +351,21 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	// Upload CPU data to GPU constant buffers
+	{
+		ExternalVertexData externalData;
+		externalData.colorTint = XMFLOAT4(vertexColorTint);
+		externalData.offset = XMFLOAT3(vertexOffset);
+
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+		// Lock memory
+		Graphics::Context->Map(constBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+		// Copy into memory
+		memcpy(mappedBuffer.pData, &externalData, sizeof(externalData));
+		// Unlock memory
+		Graphics::Context->Unmap(constBuffer.Get(), 0);
+	}
+
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	{
@@ -353,6 +394,3 @@ void Game::Draw(float deltaTime, float totalTime)
 			Graphics::DepthBufferDSV.Get());
 	}
 }
-
-
-

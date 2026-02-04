@@ -35,9 +35,8 @@ private:
 	//     Component Object Model, which DirectX objects do
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 
-	// Buffers to hold actual geometry data
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+	// Constant buffers
+	Microsoft::WRL::ComPtr<ID3D11Buffer> constBuffer;
 
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
@@ -48,13 +47,17 @@ private:
 	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
 	bool showDemoWindow;
 
-	// ImGui tests
-	char testTextBox[128];
-	int testSlider;
-
 	// Test meshes
 	std::shared_ptr<Mesh> testTriMesh;
 	std::shared_ptr<Mesh> testQuadMesh;
 	std::shared_ptr<Mesh> testPentagonMesh;
+
+	// External vertex data values
+	float vertexColorTint[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	float vertexOffset[3] = { 0.0f, 0.0f, 0.0f };
+
+	// ImGui tests
+	/*char testTextBox[128];
+	int testSlider;*/
 };
 
