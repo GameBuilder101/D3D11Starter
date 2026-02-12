@@ -7,6 +7,6 @@
 // --------------------------------------------------------
 struct ExternalVertexData
 {
+	DirectX::XMFLOAT4X4 world;
 	DirectX::XMFLOAT4 colorTint;
-	DirectX::XMFLOAT3 offset;
 };

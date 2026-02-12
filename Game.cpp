@@ -6,6 +6,8 @@
 #include "Window.h"
 #include "ConstantBuffer.h"
 
+#include <cmath>
+#include <format>
 #include <DirectXMath.h>
 
 // Needed for a helper function to load pre-compiled shader files
@@ -30,6 +32,7 @@ Game::Game()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateGeometry();
+	CreateEntities();
 
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -177,7 +180,7 @@ void Game::CreateGeometry()
 	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
 	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 
-	// Homogeneous screen coords for first test mesh (triangle)
+	// Coords for first mesh (triangle)
 	Vertex triVertices[] =
 	{
 		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
@@ -186,44 +189,59 @@ void Game::CreateGeometry()
 	};
 	unsigned int triIndices[] = { 0, 1, 2 };
 	// Make the test mesh
-	testTriMesh = std::make_shared<Mesh>(
+	triMesh = std::make_shared<Mesh>(
 		triVertices,
 		triIndices,
 		3,
 		3);
 
-	// Homogeneous screen coords for second test mesh (square)
+	// Coords for second mesh (square)
 	Vertex quadVertices[] =
 	{
-		{ XMFLOAT3(+0.7f, +0.7f, +0.0f), blue },
-		{ XMFLOAT3(+0.7f, +0.9f, +0.0f), green },
-		{ XMFLOAT3(+0.9f, +0.9f, +0.0f), green },
-		{ XMFLOAT3(+0.9f, +0.7f, +0.0f), blue },
+		{ XMFLOAT3(-0.1f, -0.1f, +0.0f), blue },
+		{ XMFLOAT3(-0.1f, +0.1f, +0.0f), green },
+		{ XMFLOAT3(+0.1f, +0.1f, +0.0f), green },
+		{ XMFLOAT3(+0.1f, -0.1f, +0.0f), blue },
 	};
 	unsigned int quadIndices[] = { 0, 1, 2, 2, 3, 0 };
-	// Make the test mesh
-	testQuadMesh = std::make_shared<Mesh>(
+	// Make the mesh
+	quadMesh = std::make_shared<Mesh>(
 		quadVertices,
 		quadIndices,
 		4,
 		6);
 	
-	// Homogeneous screen coords for third test mesh (pentagon)
+	// Coords for third mesh (pentagon)
 	Vertex pentagonVertices[] =
 	{
-		{ XMFLOAT3(-0.7f, -0.7f, +0.0f), blue },
-		{ XMFLOAT3(-0.75f, -0.875f, +0.0f), red },
-		{ XMFLOAT3(-0.85f, -0.875f, +0.0f), red },
-		{ XMFLOAT3(-0.9f, -0.7f, +0.0f), green },
-		{ XMFLOAT3(-0.8f, -0.55f, +0.0f), red },
+		{ XMFLOAT3(+0.1f,  +0.0125f, +0.0f), blue },
+		{ XMFLOAT3(+0.05f, -0.1625f, +0.0f), red },
+		{ XMFLOAT3(-0.05f, -0.1625f, +0.0f), red },
+		{ XMFLOAT3(-0.1f,  +0.0125f, +0.0f), green },
+		{ XMFLOAT3(+0.0f,  +0.1625f, +0.0f), red },
 	};
 	unsigned int pentagonIndices[] = { 0, 1, 2, 2, 3, 0, 0, 3, 4 };
-	// Make the test mesh
-	testPentagonMesh = std::make_shared<Mesh>(
+	// Make the mesh
+	pentagonMesh = std::make_shared<Mesh>(
 		pentagonVertices,
 		pentagonIndices,
 		5,
 		9);
+}
+
+
+// --------------------------------------------------------
+// Creates entities for testing
+// --------------------------------------------------------
+void Game::CreateEntities()
+{
+	entities = {
+		std::make_shared<Entity>(triMesh),
+		std::make_shared<Entity>(quadMesh),
+		std::make_shared<Entity>(pentagonMesh),
+		std::make_shared<Entity>(pentagonMesh),
+		std::make_shared<Entity>(pentagonMesh)
+	};
 }
 
 
@@ -245,9 +263,78 @@ void Game::Update(float deltaTime, float totalTime)
 	UpdateImGui(deltaTime, totalTime);
 	BuildUI();
 
+	// Test movement for entities
+	float sineTime = std::sin(totalTime);
+	float sineTimeSlow = std::sin(totalTime * 0.25f);
+	entities[0]->GetTransform()->SetRotation(0.0f, 0.0f, std::sin(sineTimeSlow));
+	entities[1]->GetTransform()->SetScale(sineTime + 2.0f, sineTime + 2.0f, 1.0f);
+	entities[2]->GetTransform()->SetPosition(sineTime, 0.0f, 0.0f);
+	entities[3]->GetTransform()->SetPosition(0.0f, sineTime, 0.0f);
+	entities[4]->GetTransform()->SetPosition(-sineTime, -sineTime, 0.0f);
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
+}
+
+
+// --------------------------------------------------------
+// Clear the screen, redraw everything, present to the user
+// --------------------------------------------------------
+void Game::Draw(float deltaTime, float totalTime)
+{
+	// Frame START
+	// - These things should happen ONCE PER FRAME
+	// - At the beginning of Game::Draw() before drawing *anything*
+	{
+		// Clear the back buffer (erase what's on screen) and depth buffer
+		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backgroundColor);
+		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	}
+
+	// DRAW geometry
+	// - These steps are generally repeated for EACH object you draw
+	{
+		for (unsigned int i = 0; i < entities.size(); i++)
+		{
+			// Upload CPU data to GPU constant buffers
+			{
+				ExternalVertexData externalData;
+				externalData.colorTint = XMFLOAT4(vertexColorTint);
+				externalData.world = entities[i]->GetTransform()->GetWorldMatrix();
+
+				D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+				// Lock memory
+				Graphics::Context->Map(constBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+				// Copy into memory
+				memcpy(mappedBuffer.pData, &externalData, sizeof(externalData));
+				// Unlock memory
+				Graphics::Context->Unmap(constBuffer.Get(), 0);
+			}
+
+			entities[i]->Draw();
+		}
+	}
+
+	ImGui::Render(); // Turns this frame’s UI into renderable triangles
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
+
+	// Frame END
+	// - These should happen exactly ONCE PER FRAME
+	// - At the very end of the frame (after drawing *everything*)
+	{
+		// Present at the end of the frame
+		bool vsync = Graphics::VsyncState();
+		Graphics::SwapChain->Present(
+			vsync ? 1 : 0,
+			vsync ? 0 : DXGI_PRESENT_ALLOW_TEARING);
+
+		// Re-bind back buffer and depth buffer after presenting
+		Graphics::Context->OMSetRenderTargets(
+			1,
+			Graphics::BackBufferRTV.GetAddressOf(),
+			Graphics::DepthBufferDSV.Get());
+	}
 }
 
 
@@ -292,30 +379,32 @@ void Game::BuildUI()
 	if (ImGui::Button("Toggle ImGui demo window"))
 		showDemoWindow = !showDemoWindow;
 
-	// Show a panel for displaying debug information on the test meshes
-	if (ImGui::CollapsingHeader("Meshes"))
-	{
-		BuildMeshUI(testTriMesh.get(), "Mesh: Triangle");
-		BuildMeshUI(testQuadMesh.get(), "Mesh: Quad");
-		BuildMeshUI(testPentagonMesh.get(), "Mesh: Pentagon");
-	}
-
 	// Show a panel for modifying external vertex data
-	if (ImGui::CollapsingHeader("Constant Buffer Vertex Data"))
+	if (ImGui::TreeNode("Constant Buffer Vertex Data"))
 	{
 		ImGui::ColorEdit4("Color Tint", vertexColorTint);
-		ImGui::DragFloat3("Offset", vertexOffset);
+		ImGui::TreePop();
 	}
 
-	// Test a toggle header
-	/*if (ImGui::CollapsingHeader("Test toggle header"))
+	// Show a panel for displaying debug information on the meshes
+	if (ImGui::TreeNode("Meshes"))
 	{
-		// Test a text box
-		ImGui::InputText("Text text box", testTextBox, 128);
+		BuildMeshUI(triMesh.get(), "Mesh: Triangle");
+		BuildMeshUI(quadMesh.get(), "Mesh: Quad");
+		BuildMeshUI(pentagonMesh.get(), "Mesh: Pentagon");
+		ImGui::TreePop();
+	}
 
-		// Test a slider
-		ImGui::SliderInt("Test slider", &testSlider, 0, 100);
-	}*/
+	// Show a panel for modifying entity data
+	if (ImGui::TreeNode("Entities"))
+	{
+		for (unsigned int i = 0; i < entities.size(); i++)
+		{
+			BuildEntityUI(entities[i].get(), i);
+		}
+
+		ImGui::TreePop();
+	}
 
 	ImGui::End(); // Ends the current window
 
@@ -328,69 +417,42 @@ void Game::BuildUI()
 // Build a UI to display debug information about a mesh
 void Game::BuildMeshUI(Mesh* mesh, const char name[])
 {
-	if (!ImGui::CollapsingHeader(name))
+	if (!ImGui::TreeNode(name))
 		return;
 
 	ImGui::Text("Triangles: %d", mesh->GetIndexBufferCount() / 3);
 	ImGui::Text("Vertices: %d", mesh->GetVertexBufferCount());
 	ImGui::Text("Indices: %d", mesh->GetIndexBufferCount());
+
+	ImGui::TreePop();
 }
 
 
-// --------------------------------------------------------
-// Clear the screen, redraw everything, present to the user
-// --------------------------------------------------------
-void Game::Draw(float deltaTime, float totalTime)
+// Build a UI to control transform data of entities
+void Game::BuildEntityUI(Entity* entity, int index)
 {
-	// Frame START
-	// - These things should happen ONCE PER FRAME
-	// - At the beginning of Game::Draw() before drawing *anything*
-	{
-		// Clear the back buffer (erase what's on screen) and depth buffer
-		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backgroundColor);
-		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-	}
+	if (!ImGui::TreeNode(std::format("Entity {}", index).c_str()))
+		return;
 
-	// Upload CPU data to GPU constant buffers
-	{
-		ExternalVertexData externalData;
-		externalData.colorTint = XMFLOAT4(vertexColorTint);
-		externalData.offset = XMFLOAT3(vertexOffset);
+	Transform* transform = entity->GetTransform();
 
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-		// Lock memory
-		Graphics::Context->Map(constBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-		// Copy into memory
-		memcpy(mappedBuffer.pData, &externalData, sizeof(externalData));
-		// Unlock memory
-		Graphics::Context->Unmap(constBuffer.Get(), 0);
-	}
+	// Get the position in a local value
+	DirectX::XMFLOAT3 v = transform->GetPosition();
+	// DragFloat3 might modift the value
+	ImGui::DragFloat3("Position", &v.x, 0.1f);
+	// Assign the value back to the transform
+	transform->SetPosition(v);
 
-	// DRAW geometry
-	// - These steps are generally repeated for EACH object you draw
-	{
-		testTriMesh->Draw();
-		testQuadMesh->Draw();
-		testPentagonMesh->Draw();
-	}
+	v = transform->GetRotation();
+	ImGui::DragFloat3("Rotation (Radians)", &v.x, 0.1f);
+	transform->SetRotation(v);
 
-	ImGui::Render(); // Turns this frame’s UI into renderable triangles
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
+	v = transform->GetScale();
+	ImGui::DragFloat3("Scale", &v.x, 0.1f);
+	transform->SetScale(v);
 
-	// Frame END
-	// - These should happen exactly ONCE PER FRAME
-	// - At the very end of the frame (after drawing *everything*)
-	{
-		// Present at the end of the frame
-		bool vsync = Graphics::VsyncState();
-		Graphics::SwapChain->Present(
-			vsync ? 1 : 0,
-			vsync ? 0 : DXGI_PRESENT_ALLOW_TEARING);
+	// Add label for debug information
+	ImGui::Text("Mesh Index Count: %d", entity->GetMesh()->GetIndexBufferCount());
 
-		// Re-bind back buffer and depth buffer after presenting
-		Graphics::Context->OMSetRenderTargets(
-			1,
-			Graphics::BackBufferRTV.GetAddressOf(),
-			Graphics::DepthBufferDSV.Get());
-	}
+	ImGui::TreePop();
 }

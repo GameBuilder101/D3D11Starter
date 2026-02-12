@@ -1,9 +1,11 @@
 #pragma once
 
+#include <vector>
 #include <memory>
 #include <d3d11.h>
 #include <wrl/client.h>
 #include "Mesh.h"
+#include "Entity.h"
 
 class Game
 {
@@ -19,16 +21,18 @@ public:
 	void Draw(float deltaTime, float totalTime);
 	void OnResize();
 
-	// Helper functions
-	void UpdateImGui(float deltaTime, float totalTime);
-	void BuildUI();
-	void BuildMeshUI(Mesh* mesh, const char name[]);
-
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders();
 	void CreateGeometry();
+	void CreateEntities();
+
+	// UI helper functions
+	void UpdateImGui(float deltaTime, float totalTime);
+	void BuildUI();
+	void BuildMeshUI(Mesh* mesh, const char name[]);
+	void BuildEntityUI(Entity* entity, int index);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -43,21 +47,16 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
-	// ImGui customization
+	// Mesh data
+	std::shared_ptr<Mesh> triMesh;
+	std::shared_ptr<Mesh> quadMesh;
+	std::shared_ptr<Mesh> pentagonMesh;
+
+	std::vector<std::shared_ptr<Entity>> entities;
+
+	// ImGui modified data
 	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
 	bool showDemoWindow;
-
-	// Test meshes
-	std::shared_ptr<Mesh> testTriMesh;
-	std::shared_ptr<Mesh> testQuadMesh;
-	std::shared_ptr<Mesh> testPentagonMesh;
-
-	// External vertex data values
 	float vertexColorTint[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	float vertexOffset[3] = { 0.0f, 0.0f, 0.0f };
-
-	// ImGui tests
-	/*char testTextBox[128];
-	int testSlider;*/
 };
 
