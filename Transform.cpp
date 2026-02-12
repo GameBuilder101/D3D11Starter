@@ -138,6 +138,7 @@ void Transform::MoveAbsolute(XMFLOAT3 offset)
 	XMVECTOR vPosition = XMLoadFloat3(&position);
 	XMVECTOR vOffset = XMLoadFloat3(&offset);
 	XMStoreFloat3(&position, vPosition + vOffset);
+	dirty = true;
 }
 
 void Transform::Rotate(float pitch, float yaw, float roll)
@@ -151,6 +152,7 @@ void Transform::Rotate(XMFLOAT3 pitchYawRoll)
 	XMVECTOR vRotation = XMLoadFloat3(&rotation);
 	XMVECTOR vOffset = XMLoadFloat3(&pitchYawRoll);
 	XMStoreFloat3(&rotation, vRotation + vOffset);
+	dirty = true;
 }
 
 void Transform::Scale(float x, float y, float z)
@@ -164,4 +166,5 @@ void Transform::Scale(XMFLOAT3 scale)
 	XMVECTOR vScale = XMLoadFloat3(&(this->scale));
 	XMVECTOR vMult = XMLoadFloat3(&scale);
 	XMStoreFloat3(&(this->scale), vScale * vMult);
+	dirty = true;
 }

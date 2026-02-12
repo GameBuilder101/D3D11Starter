@@ -264,13 +264,14 @@ void Game::Update(float deltaTime, float totalTime)
 	BuildUI();
 
 	// Test movement for entities
-	float sineTime = std::sin(totalTime);
-	float sineTimeSlow = std::sin(totalTime * 0.25f);
-	entities[0]->GetTransform()->SetRotation(0.0f, 0.0f, std::sin(sineTimeSlow));
-	entities[1]->GetTransform()->SetScale(sineTime + 2.0f, sineTime + 2.0f, 1.0f);
-	entities[2]->GetTransform()->SetPosition(sineTime, 0.0f, 0.0f);
-	entities[3]->GetTransform()->SetPosition(0.0f, sineTime, 0.0f);
-	entities[4]->GetTransform()->SetPosition(-sineTime, -sineTime, 0.0f);
+	float sineTime = std::sin(totalTime * 2.0f) * deltaTime;
+	float sineTimeSlow = std::sin(totalTime * 0.5f) * deltaTime;
+
+	entities[0]->GetTransform()->Rotate(0.0f, 0.0f, sineTimeSlow);
+	entities[1]->GetTransform()->Scale(sineTime + 1.0f, sineTime + 1.0f, 1.0f);
+	entities[2]->GetTransform()->MoveAbsolute(sineTime, 0.0f, 0.0f);
+	entities[3]->GetTransform()->MoveAbsolute(0.0f, sineTime, 0.0f);
+	entities[4]->GetTransform()->MoveAbsolute(-sineTime, -sineTime, 0.0f);
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
