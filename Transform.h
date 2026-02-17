@@ -27,12 +27,22 @@ public:
 	// Returns the calculated world inverse transpose matrix
 	DirectX::XMFLOAT4X4 GetWorldInverseTransposeMatrix();
 
+	DirectX::XMFLOAT3 GetRight();
+	DirectX::XMFLOAT3 GetUp();
+	DirectX::XMFLOAT3 GetForward();
+
 	// Moves without taking orientation into account
 	void MoveAbsolute(float x, float y, float z);
 	// Moves without taking orientation into account
 	void MoveAbsolute(DirectX::XMFLOAT3 offset);
+	// Moves relative to local forward
+	void MoveRelative(float x, float y, float z);
+	// Moves relative to local forward
+	void MoveRelative(DirectX::XMFLOAT3 offset);
+
 	void Rotate(float pitch, float yaw, float roll);
 	void Rotate(DirectX::XMFLOAT3 pitchYawRoll);
+
 	void Scale(float x, float y, float z);
 	void Scale(DirectX::XMFLOAT3 scale);
 

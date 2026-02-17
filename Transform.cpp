@@ -125,6 +125,36 @@ void Transform::UpdateWorldMatrices()
 		XMMatrixInverse(0, XMMatrixTranspose(mWorld)));
 }
 
+XMFLOAT3 Transform::GetRight()
+{
+	XMFLOAT3 dir = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	XMVECTOR vDir = XMLoadFloat3(&dir);
+	XMVECTOR qRotation = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+	vDir = XMVector3Rotate(vDir, qRotation);
+	XMStoreFloat3(&dir, vDir);
+	return dir;
+}
+
+XMFLOAT3 Transform::GetUp()
+{
+	XMFLOAT3 dir = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	XMVECTOR vDir = XMLoadFloat3(&dir);
+	XMVECTOR qRotation = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+	vDir = XMVector3Rotate(vDir, qRotation);
+	XMStoreFloat3(&dir, vDir);
+	return dir;
+}
+
+XMFLOAT3 Transform::GetForward()
+{
+	XMFLOAT3 dir = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	XMVECTOR vDir = XMLoadFloat3(&dir);
+	XMVECTOR qRotation = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+	vDir = XMVector3Rotate(vDir, qRotation);
+	XMStoreFloat3(&dir, vDir);
+	return dir;
+}
+
 // Moves without taking orientation into account
 void Transform::MoveAbsolute(float x, float y, float z)
 {
@@ -137,6 +167,26 @@ void Transform::MoveAbsolute(XMFLOAT3 offset)
 	// Add with SIMD
 	XMVECTOR vPosition = XMLoadFloat3(&position);
 	XMVECTOR vOffset = XMLoadFloat3(&offset);
+	XMStoreFloat3(&position, vPosition + vOffset);
+	dirty = true;
+}
+
+// Moves relative to local forward
+void Transform::MoveRelative(float x, float y, float z)
+{
+	MoveRelative(XMFLOAT3(x, y, z));
+}
+
+// Moves relative to local forward
+void Transform::MoveRelative(DirectX::XMFLOAT3 offset)
+{
+	// Calculate with SIMD
+	XMVECTOR vOffset = XMLoadFloat3(&offset);
+	XMVECTOR qRotation = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+	// Rotate the offset vector by the rotation quaternion
+	vOffset = XMVector3Rotate(vOffset, qRotation);
+
+	XMVECTOR vPosition = XMLoadFloat3(&position);
 	XMStoreFloat3(&position, vPosition + vOffset);
 	dirty = true;
 }

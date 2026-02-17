@@ -31,6 +31,7 @@ Game::Game()
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
+	CreateCameras();
 	CreateGeometry();
 	CreateEntities();
 
@@ -170,6 +171,23 @@ void Game::LoadShaders()
 
 
 // --------------------------------------------------------
+// Creates cameras to swap between
+// --------------------------------------------------------
+void Game::CreateCameras()
+{
+	float aspectRatio = Window::AspectRatio();
+
+	// Create different cameras for testing
+	cameras = {
+		std::make_shared<Camera>(aspectRatio, XMFLOAT3(0.0f, 0.0f, -5.0f), XMFLOAT3(), XM_PI * 0.25f),
+		std::make_shared<Camera>(aspectRatio, XMFLOAT3(0.0f, -5.0f, -5.0f), XMFLOAT3(-XM_PI * 0.25f, 0.0f, 0.0f), XM_PI * 0.15f),
+		std::make_shared<Camera>(aspectRatio, XMFLOAT3(0.0f, 5.0f, -5.0f), XMFLOAT3(XM_PI * 0.25f, 0.0f, 0.0f), XM_PI * 0.35f)
+	};
+	activeCameraIndex = 0;
+}
+
+
+// --------------------------------------------------------
 // Creates the geometry we're going to draw
 // --------------------------------------------------------
 void Game::CreateGeometry()
@@ -251,7 +269,11 @@ void Game::CreateEntities()
 // --------------------------------------------------------
 void Game::OnResize()
 {
-	
+	// Update all cameras
+	for (unsigned int i = 0; i < cameras.size(); i++)
+	{
+		cameras[i]->UpdateProjectionMatrix(Window::AspectRatio());
+	}
 }
 
 
@@ -262,6 +284,9 @@ void Game::Update(float deltaTime, float totalTime)
 {
 	UpdateImGui(deltaTime, totalTime);
 	BuildUI();
+
+	// Update active camera
+	cameras[activeCameraIndex]->Update(deltaTime);
 
 	// Test movement for entities
 	float sineTime = std::sin(totalTime * 2.0f) * deltaTime;
@@ -296,12 +321,17 @@ void Game::Draw(float deltaTime, float totalTime)
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	{
+		// Since world is the only one that changes per entity for now,
+		// Just get these values once
+		ExternalVertexData externalData;
+		externalData.view = cameras[activeCameraIndex]->GetViewMatrix();
+		externalData.projection = cameras[activeCameraIndex]->GetProjectionMatrix();
+		externalData.colorTint = XMFLOAT4(vertexColorTint);
+
 		for (unsigned int i = 0; i < entities.size(); i++)
 		{
 			// Upload CPU data to GPU constant buffers
 			{
-				ExternalVertexData externalData;
-				externalData.colorTint = XMFLOAT4(vertexColorTint);
 				externalData.world = entities[i]->GetTransform()->GetWorldMatrix();
 
 				D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
@@ -379,6 +409,28 @@ void Game::BuildUI()
 	// Toggles the demo window
 	if (ImGui::Button("Toggle ImGui demo window"))
 		showDemoWindow = !showDemoWindow;
+
+	// Show camera data and swapping
+	if (ImGui::TreeNode("Cameras"))
+	{
+		std::shared_ptr<Camera> active = cameras[activeCameraIndex];
+		XMFLOAT3 position = active->GetTransform()->GetPosition();
+		XMFLOAT3 rotation = active->GetTransform()->GetRotation();
+
+		ImGui::Text("Position: %f, %f, %f", position.x, position.y, position.z);
+		ImGui::Text("Rotation: %f, %f, %f", rotation.x, rotation.y, rotation.z);
+		ImGui::Text("Aspect Ratio: %f", active->GetAspectRatio());
+		ImGui::Text("FOV: %f", active->GetFOV());
+
+		ImGui::Text("Swap Active Camera:");
+		// Create inputs for swapping the current camera
+		for (unsigned int i = 0; i < cameras.size(); i++)
+		{
+			ImGui::RadioButton(std::format("Camera {}", i).c_str(), &activeCameraIndex, i);
+		}
+
+		ImGui::TreePop();
+	}
 
 	// Show a panel for modifying external vertex data
 	if (ImGui::TreeNode("Constant Buffer Vertex Data"))

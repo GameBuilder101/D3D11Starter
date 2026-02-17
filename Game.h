@@ -4,6 +4,7 @@
 #include <memory>
 #include <d3d11.h>
 #include <wrl/client.h>
+#include "Camera.h"
 #include "Mesh.h"
 #include "Entity.h"
 
@@ -25,6 +26,7 @@ private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders();
+	void CreateCameras();
 	void CreateGeometry();
 	void CreateEntities();
 
@@ -46,6 +48,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+
+	std::vector<std::shared_ptr<Camera>> cameras;
+	int activeCameraIndex;
 
 	// Mesh data
 	std::shared_ptr<Mesh> triMesh;
