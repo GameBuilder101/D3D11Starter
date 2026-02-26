@@ -1,9 +1,10 @@
 #include "Entity.h"
 
-Entity::Entity(std::shared_ptr<Mesh> mesh)
+Entity::Entity(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material)
 {
 	transform = Transform();
 	this->mesh = mesh;
+	this->material = material;
 }
 
 Entity::~Entity() {}
@@ -18,7 +19,7 @@ std::shared_ptr<Mesh> Entity::GetMesh()
 	return mesh;
 }
 
-void Entity::Draw()
+std::shared_ptr<Material> Entity::GetMaterial()
 {
-	mesh->Draw();
+	return material;
 }

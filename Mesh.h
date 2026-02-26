@@ -8,7 +8,8 @@
 class Mesh
 {
 public:
-	Mesh(Vertex vertices[], unsigned int indices[], unsigned int vertexCount, unsigned int indexCount);
+	Mesh(Vertex* vertices, unsigned int* indices, unsigned int vertexCount, unsigned int indexCount);
+	Mesh(const char* filePath);
 	~Mesh();
 	Mesh(const Mesh&) = delete;
 	Mesh& operator=(const Mesh&) = delete;
@@ -22,6 +23,8 @@ public:
 	void Draw();
 
 private:
+	void CreateBuffers(Vertex* vertices, unsigned int* indices, unsigned int vertexCount, unsigned int indexCount);
+
 	// Vertex/index buffers specific to this mesh
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;

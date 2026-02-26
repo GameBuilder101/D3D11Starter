@@ -6,14 +6,16 @@
 // - Each variable must have a semantic, which defines its usage
 struct VertexToPixel
 {
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
-	float4 color			: COLOR;
+	float4 screenPosition   : SV_POSITION;
+    float3 normal           : NORMAL;
+    float2 uv               : TEXCOORD;
 };
+
+cbuffer ExternalData : register(b0)
+{
+    float4 tint;
+    float time;
+}
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -26,9 +28,6 @@ struct VertexToPixel
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	// Just return the input color
-	// - This color (like most values passing through the rasterizer) is 
-	//   interpolated for each pixel between the corresponding vertices 
-	//   of the triangle we're rendering
-	return input.color;
+    // Output material color tint
+    return tint;
 }

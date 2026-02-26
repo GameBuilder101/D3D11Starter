@@ -12,7 +12,7 @@ Camera::Camera(float aspectRatio, XMFLOAT3 position, XMFLOAT3 pitchYawRoll, floa
 	UpdateViewMatrix();
 	UpdateProjectionMatrixFull(aspectRatio, fieldOfView, 0.1f, 1000.0f);
 
-	moveSpeed = 5.0f;
+	moveSpeed = 8.0f;
 	lookSpeed = 0.005f;
 }
 
