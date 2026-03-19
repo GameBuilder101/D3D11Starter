@@ -339,5 +339,5 @@ Mesh::Mesh(const char* filePath)
 	obj.close();
 
 	// Create the actual buffers!
-	CreateBuffers(&finalVertices[0], &finalIndices[0], finalVertices.size(), finalIndices.size());
+	CreateBuffers(&finalVertices[0], &finalIndices[0], (unsigned int)finalVertices.size(), (unsigned int)finalIndices.size());
 }

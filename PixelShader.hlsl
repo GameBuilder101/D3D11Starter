@@ -13,9 +13,14 @@ struct VertexToPixel
 
 cbuffer ExternalData : register(b0)
 {
+    float2 textureScale;
+    float2 textureOffset;
     float4 tint;
     float time;
 }
+
+Texture2D AlbedoMap : register(t0); // "t" registers are for textures
+SamplerState MainSampler : register(s0); // "s" registers are for samplers
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -28,6 +33,12 @@ cbuffer ExternalData : register(b0)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-    // Output material color tint
-    return tint;
+    // Calculate scaled/offset UVs
+    float2 uv = input.uv * textureScale + textureOffset;
+    
+    float4 albedo = AlbedoMap.Sample(MainSampler, uv);
+    // Apply color tint
+    albedo *= tint;
+    
+    return albedo;
 }

@@ -17,6 +17,8 @@ struct VertexShaderConstData
 // --------------------------------------------------------
 struct PixelShaderConstData
 {
+	DirectX::XMFLOAT2 textureScale;
+	DirectX::XMFLOAT2 textureOffset;
 	DirectX::XMFLOAT4 tint;
 	float time;
 };

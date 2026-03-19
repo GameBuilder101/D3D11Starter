@@ -9,6 +9,7 @@
 #include <cmath>
 #include <format>
 #include <DirectXMath.h>
+#include <WICTextureLoader.h>
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -29,8 +30,8 @@ Game::Game()
 {
 	// Helper methods for loading assets and scene entities
 	LoadMeshes();
+	LoadTextures();
 	LoadMaterials();
-	CreateConstBuffers();
 	CreateEntities();
 	CreateCameras();
 
@@ -87,6 +88,37 @@ void Game::LoadMeshes()
 		std::make_shared<Mesh>(FixPath("../../Assets/Meshes/quad.obj").c_str()),
 		std::make_shared<Mesh>(FixPath("../../Assets/Meshes/quad_double_sided.obj").c_str())
 	};
+}
+
+
+// --------------------------------------------------------
+// Loads the textures shared by materials
+// --------------------------------------------------------
+void Game::LoadTextures()
+{
+	// Load bricks texture
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(), // Context needed for mipmap creation
+		L"Assets/Textures/Bricks.png", // File path is automatically relative
+		0, // ID3D11Texture2D pointer, not used
+		bricksTexture.GetAddressOf());
+
+	// Load planks texture
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		L"Assets/Textures/Planks.png",
+		0,
+		planksTexture.GetAddressOf());
+
+	// Load road lines texture
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		L"Assets/Textures/RoadLines.png",
+		0,
+		roadLinesTexture.GetAddressOf());
 }
 
 
@@ -154,6 +186,9 @@ void Game::LoadMaterials()
 	ID3DBlob* pixelShaderBlob = LoadShaderBlob(L"PixelShader.cso");
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader = LoadPixelShader(pixelShaderBlob);
 
+	ID3DBlob* detailPSBlob = LoadShaderBlob(L"DetailPS.cso");
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> detailPS = LoadPixelShader(detailPSBlob);
+
 	ID3DBlob* debugNormalsPSBlob = LoadShaderBlob(L"DebugNormalsPS.cso");
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> debugNormalsPS = LoadPixelShader(debugNormalsPSBlob);
 
@@ -195,66 +230,59 @@ void Game::LoadMaterials()
 			inputLayout.GetAddressOf());			// Address of the resulting ID3D11InputLayout pointer
 	}
 
+	// Describe the sampler state used for textures
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
+
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP; // X wrapping
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP; // Y wrapping
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; // Z wrapping (3D textures only)
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.MaxAnisotropy = 16; // Can set this value high for now because it shouldn't impact performance that much
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX; // Mipmapping at any range
+
+	// Create the sampler
+	Graphics::Device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
+
 	/* Finally, create the materials. These will store the
 	 * shaders that were just loaded */
 	materials = {
-		// Solid red
-		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)),
-		// Solid green
-		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)),
-		// Solid blue
-		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)),
+		// Bricks
+		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
+		// Scaled/offset planks
+		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
+		// Tinted bricks
+		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(0.25f, 0.25f, 1.0f, 1.0f)),
+		// Detail
+		std::make_shared<Material>(vertexShader, detailPS, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
 		// Normals display
 		std::make_shared<Material>(vertexShader, debugNormalsPS, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
 		// UVs display
 		std::make_shared<Material>(vertexShader, debugUVsPS, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
-		// Custom
+		// Time-based custom
 		std::make_shared<Material>(vertexShader, customPS, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f))
 	};
-}
 
-
-// --------------------------------------------------------
-// Creates the constant buffer for shaders to
-// access constant data updated per object
-// --------------------------------------------------------
-void Game::CreateConstBuffers()
-{
-	unsigned int size;
-	D3D11_BUFFER_DESC cbd;
-
-	// Create the vertex shader buffer
+	// Assign textures
 	{
-		// Calculate the size of the vertex constant buffer (snapped to multiple of 16)
-		size = (sizeof(VertexShaderConstData) + 15) / 16 * 16;
+		materials[0]->AddTexture(0, bricksTexture);
+		materials[0]->AddSampler(0, sampler);
 
-		// Describe the constant buffer
-		cbd = {}; // Sets struct to all zeros
-		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		cbd.ByteWidth = size; // Must be a multiple of 16
-		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		cbd.Usage = D3D11_USAGE_DYNAMIC;
+		materials[1]->AddTexture(0, planksTexture);
+		materials[1]->AddSampler(0, sampler);
 
-		Graphics::Device->CreateBuffer(&cbd, 0, vertexShaderConstBuffer.GetAddressOf());
-		// Bind the buffer to vertex register 0 for now
-		Graphics::Context->VSSetConstantBuffers(0, 1, vertexShaderConstBuffer.GetAddressOf());
+		materials[2]->AddTexture(0, bricksTexture);
+		materials[2]->AddSampler(0, sampler);
+
+		materials[3]->AddTexture(0, planksTexture);
+		materials[3]->AddTexture(1, roadLinesTexture);
+		materials[3]->AddSampler(0, sampler);
 	}
 
-	// Create the pixel shader buffer
+	// Apply scaling/offset
 	{
-		// Calculate the size of the pixel constant buffer (snapped to multiple of 16)
-		size = (sizeof(PixelShaderConstData) + 15) / 16 * 16;
-
-		// Describe the constant buffer
-		cbd = {}; // Sets struct to all zeros
-		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		cbd.ByteWidth = size; // Must be a multiple of 16
-		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		cbd.Usage = D3D11_USAGE_DYNAMIC;
-
-		Graphics::Device->CreateBuffer(&cbd, 0, pixelShaderConstBuffer.GetAddressOf());
-		// Bind the buffer to pixel register 0 for now
-		Graphics::Context->PSSetConstantBuffers(0, 1, pixelShaderConstBuffer.GetAddressOf());
+		materials[1]->SetTextureScale(DirectX::XMFLOAT2(5.0f, 5.0f));
+		materials[1]->SetTextureOffset(DirectX::XMFLOAT2(0.5f, 0.5f));
 	}
 }
 
@@ -273,9 +301,9 @@ void Game::CreateEntities()
 	/* Since the entity list is being auto-generated, we need some
 	 * way to define which one uses which material */
 	unsigned int materialIndices[] = {
-		3, 3, 3, 3, 3, 3, 3,
 		4, 4, 4, 4, 4, 4, 4,
-		0, 1, 2, 5, 0, 1, 2
+		5, 5, 5, 5, 5, 5, 5,
+		0, 1, 2, 6, 0, 3, 1
 	};
 
 	unsigned int i = 0; // Track the index of the entity being made
@@ -402,8 +430,7 @@ void Game::Draw(float deltaTime, float totalTime)
 void Game::DrawEntity(std::shared_ptr<Entity> entity, float totalTime)
 {
 	// Bind the current shaders based on the entity's materials
-	Graphics::Context->VSSetShader(entity->GetMaterial()->GetVertexShader().Get(), 0, 0);
-	Graphics::Context->PSSetShader(entity->GetMaterial()->GetPixelShader().Get(), 0, 0);
+	entity->GetMaterial()->BindShaders();
 
 	// Update vertex shader constant buffer values
 	{
@@ -413,30 +440,30 @@ void Game::DrawEntity(std::shared_ptr<Entity> entity, float totalTime)
 		externalData.view = cameras[activeCameraIndex]->GetViewMatrix();
 		externalData.projection = cameras[activeCameraIndex]->GetProjectionMatrix();
 
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-		// Lock memory
-		Graphics::Context->Map(vertexShaderConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-		// Copy data into constant memory on the GPU
-		memcpy(mappedBuffer.pData, &externalData, sizeof(externalData));
-		// Unlock memory
-		Graphics::Context->Unmap(vertexShaderConstBuffer.Get(), 0);
+		Graphics::FillAndBindNextConstantBuffer(
+			&externalData,
+			sizeof(externalData),
+			D3D11_VERTEX_SHADER,
+			0);
 	}
 
 	// Update pixel shader constant buffer values
 	{
 		// Set up the buffer data struct
 		PixelShaderConstData externalData = {};
+		externalData.textureScale = entity->GetMaterial()->GetTextureScale();
+		externalData.textureOffset = entity->GetMaterial()->GetTextureOffset();
 		externalData.tint = entity->GetMaterial()->GetTint();
 		externalData.time = totalTime;
 
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-		// Lock memory
-		Graphics::Context->Map(pixelShaderConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-		// Copy data into constant memory on the GPU
-		memcpy(mappedBuffer.pData, &externalData, sizeof(externalData));
-		// Unlock memory
-		Graphics::Context->Unmap(pixelShaderConstBuffer.Get(), 0);
+		Graphics::FillAndBindNextConstantBuffer(
+			&externalData,
+			sizeof(externalData),
+			D3D11_PIXEL_SHADER,
+			0);
 	}
+
+	entity->GetMaterial()->BindTexturesAndSamplers();
 
 	// Perform the draw call on the entity's mesh
 	entity->GetMesh()->Draw();
@@ -518,6 +545,17 @@ void Game::BuildUI()
 		ImGui::TreePop();
 	}
 
+	// Show a panel for displaying debug information on the materials
+	if (ImGui::TreeNode("Materials"))
+	{
+		for (unsigned int i = 0; i < materials.size(); i++)
+		{
+			BuildMaterialUI(materials[i].get(), i);
+		}
+
+		ImGui::TreePop();
+	}
+
 	// Show a panel for modifying entity data
 	if (ImGui::TreeNode("Entities"))
 	{
@@ -551,6 +589,34 @@ void Game::BuildMeshUI(Mesh* mesh, int index)
 }
 
 
+// Build a UI to display debug information about a material
+void Game::BuildMaterialUI(Material* material, int index)
+{
+	if (!ImGui::TreeNode(std::format("Material {}", index).c_str()))
+		return;
+
+	DirectX::XMFLOAT2 v = material->GetTextureScale();
+	ImGui::DragFloat2("Texture Scale", &v.x, 0.1f);
+	material->SetTextureScale(v);
+
+	v = material->GetTextureOffset();
+	ImGui::DragFloat2("Texture Offset", &v.x, 0.1f);
+	material->SetTextureOffset(v);
+
+	DirectX::XMFLOAT4 tint = material->GetTint();
+	ImGui::ColorEdit4("Tint", &tint.x);
+	material->SetTint(tint);
+
+	// Provide a preview of each texture
+	for (auto& pair : material->GetTextures())
+	{
+		ImGui::Image(ImTextureRef((void*)pair.second.Get()), ImVec2(128.0f, 128.0f));
+	}
+
+	ImGui::TreePop();
+}
+
+
 // Build a UI to control transform data of entities
 void Game::BuildEntityUI(Entity* entity, int index)
 {
@@ -561,7 +627,7 @@ void Game::BuildEntityUI(Entity* entity, int index)
 
 	// Get the position in a local value
 	DirectX::XMFLOAT3 v = transform->GetPosition();
-	// DragFloat3 might modift the value
+	// DragFloat3 might modify the value
 	ImGui::DragFloat3("Position", &v.x, 0.1f);
 	// Assign the value back to the transform
 	transform->SetPosition(v);

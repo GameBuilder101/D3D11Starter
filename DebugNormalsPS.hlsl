@@ -7,6 +7,8 @@ struct VertexToPixel
 
 cbuffer ExternalData : register(b0)
 {
+    float2 textureScale;
+    float2 textureOffset;
     float4 tint;
     float time;
 }
@@ -14,5 +16,5 @@ cbuffer ExternalData : register(b0)
 float4 main(VertexToPixel input) : SV_TARGET
 {
 	// Output normal vectors as colors
-    return float4(input.normal, 1.0f);
+    return float4(input.normal.xyz, 1.0f) * tint;
 }

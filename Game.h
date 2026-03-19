@@ -30,22 +30,22 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> LoadVertexShader(ID3DBlob* blob);
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> LoadPixelShader(ID3DBlob* blob);
 	void LoadMeshes();
+	void LoadTextures();
 	void LoadMaterials();
-	void CreateConstBuffers();
 	void CreateEntities();
 	void CreateCameras();
 
 	// Drawing helper methods
 	void DrawEntity(std::shared_ptr<Entity> entity, float totalTime);
 
-	// Loaded mesh data
+	// Loaded asset data
 	std::vector<std::shared_ptr<Mesh>> meshes;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksTexture;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> planksTexture;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> roadLinesTexture;
 
 	// Shared input layout for shaders
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
-	// Constant buffers for shaders
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexShaderConstBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> pixelShaderConstBuffer;
 
 	// Loaded material data
 	std::vector<std::shared_ptr<Material>> materials;
@@ -61,6 +61,7 @@ private:
 	void UpdateImGui(float deltaTime, float totalTime);
 	void BuildUI();
 	void BuildMeshUI(Mesh* mesh, int index);
+	void BuildMaterialUI(Material* material, int index);
 	void BuildEntityUI(Entity* entity, int index);
 
 	// ImGui modified data

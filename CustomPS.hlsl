@@ -7,6 +7,8 @@ struct VertexToPixel
 
 cbuffer ExternalData : register(b0)
 {
+    float2 textureScale;
+    float2 textureOffset;
     float4 tint;
     float time;
 }

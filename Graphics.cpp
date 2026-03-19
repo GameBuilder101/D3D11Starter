@@ -21,6 +21,10 @@ namespace Graphics
 
 		D3D_FEATURE_LEVEL featureLevel{};
 
+		// Size of the constant buffer heap (in bytes)
+		unsigned int cbHeapSize;
+		// Position of the next unused portion of the heap (in bytes)
+		unsigned int cbHeapOffset;
 	}
 }
 
@@ -154,6 +158,25 @@ HRESULT Graphics::Initialize(unsigned int windowWidth, unsigned int windowHeight
 	// will also set the appropriate viewport.
 	ResizeBuffers(windowWidth, windowHeight);
 
+	// Initialize constant ring buffer heap
+	{
+		cbHeapSize = 256000; // Number of bytes to allocate
+		// Ensure 256-byte alignment (in case the above value changes)!
+		cbHeapSize = (cbHeapSize + 255) / 256 * 256;
+
+		cbHeapOffset = 0;
+
+		// Describe the buffer
+		D3D11_BUFFER_DESC cbd = {}; // Sets struct to all zeros
+		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		cbd.ByteWidth = cbHeapSize; // Must be a multiple of 16
+		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		cbd.Usage = D3D11_USAGE_DYNAMIC;
+
+		// Create the buffer
+		Graphics::Device->CreateBuffer(&cbd, 0, constantBufferHeap.GetAddressOf());
+	}
+
 #if defined(DEBUG) || defined(_DEBUG)
 	// If we're in debug mode, set up the info queue to
 	// get debug messages we can print to our console
@@ -263,6 +286,74 @@ void Graphics::ResizeBuffers(unsigned int width, unsigned int height)
 
 	// Are we in a fullscreen state?
 	SwapChain->GetFullscreenState(&isFullscreen, 0);
+}
+
+
+// --------------------------------------------------------
+// Does the following:
+// - Finds an open space in the buffer to allocate, wrapping around if needed
+// - Copies to GPU memory, filling the space
+// - Binds the constant buffer to the given shader type and register slot
+// --------------------------------------------------------
+void Graphics::FillAndBindNextConstantBuffer(
+	void* data,
+	unsigned int dataSizeInBytes,
+	D3D11_SHADER_TYPE shaderType,
+	unsigned int registerSlot)
+{
+	// Figure out the allocated size (needs to be aligned to 256 byte chunks)
+	unsigned int reservationSize = (dataSizeInBytes + 255) / 256 * 256;
+
+	/* Does this fit in the remaining space? If not,
+	 * loop back to the beginning of the ring buffer */
+	if (cbHeapOffset + reservationSize >= cbHeapSize)
+		cbHeapOffset = 0;
+
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer{};
+	// Lock memory
+	Context->Map(
+		constantBufferHeap.Get(),
+		0,
+		D3D11_MAP_WRITE_NO_OVERWRITE,
+		0,
+		&mappedBuffer);
+
+	// Copy data into constant memory on the GPU
+	void* uploadAddress = reinterpret_cast<void*>((UINT64)mappedBuffer.pData + cbHeapOffset);
+	memcpy(uploadAddress, data, dataSizeInBytes);
+
+	// Unlock memory
+	Graphics::Context->Unmap(constantBufferHeap.Get(), 0);
+
+	// Finally, bind the buffer depending on shader type
+	
+	// Calculate the binding offset and size as measured in 16-byte constants
+	unsigned int firstConstant = cbHeapOffset / 16;
+	unsigned int numConstants = reservationSize / 16;
+
+	// Bind the buffer to the proper pipeline stage
+	switch (shaderType)
+	{
+	case D3D11_VERTEX_SHADER:
+		Context->VSSetConstantBuffers1(
+			registerSlot,
+			1,
+			constantBufferHeap.GetAddressOf(),
+			&firstConstant,
+			&numConstants);
+		break;
+	case D3D11_PIXEL_SHADER:
+		Context->PSSetConstantBuffers1(
+			registerSlot,
+			1,
+			constantBufferHeap.GetAddressOf(),
+			&firstConstant,
+			&numConstants);
+		break;
+	}
+
+	// Shift the offset counter
+	cbHeapOffset += reservationSize;
 }
 
 
