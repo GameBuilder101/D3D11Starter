@@ -81,12 +81,12 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetIndexBuffer()
 	return indexBuffer;
 }
 
-unsigned int Mesh::GetVertexBufferCount()
+unsigned int Mesh::GetVertexBufferCount() const
 {
 	return vertexBufferCount;
 }
 
-unsigned int Mesh::GetIndexBufferCount()
+unsigned int Mesh::GetIndexBufferCount() const
 {
 	return indexBufferCount;
 }

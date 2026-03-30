@@ -16,8 +16,8 @@ public:
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer();
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetIndexBuffer();
-	unsigned int GetVertexBufferCount();
-	unsigned int GetIndexBufferCount();
+	unsigned int GetVertexBufferCount() const;
+	unsigned int GetIndexBufferCount() const;
 
 	// Sets the buffers and draws the correct number of vertices
 	void Draw();

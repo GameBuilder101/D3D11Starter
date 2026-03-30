@@ -34,6 +34,7 @@ Game::Game()
 	LoadMaterials();
 	CreateEntities();
 	CreateCameras();
+	CreateLights();
 
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -96,7 +97,7 @@ void Game::LoadMeshes()
 // --------------------------------------------------------
 void Game::LoadTextures()
 {
-	// Load bricks texture
+	// Bricks texture
 	CreateWICTextureFromFile(
 		Graphics::Device.Get(),
 		Graphics::Context.Get(), // Context needed for mipmap creation
@@ -104,7 +105,15 @@ void Game::LoadTextures()
 		0, // ID3D11Texture2D pointer, not used
 		bricksTexture.GetAddressOf());
 
-	// Load planks texture
+	// Bricks texture - roughness
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		L"Assets/Textures/Bricks_r.png",
+		0,
+		bricksTextureR.GetAddressOf());
+
+	// Planks texture
 	CreateWICTextureFromFile(
 		Graphics::Device.Get(),
 		Graphics::Context.Get(),
@@ -112,13 +121,45 @@ void Game::LoadTextures()
 		0,
 		planksTexture.GetAddressOf());
 
-	// Load road lines texture
+	// Planks texture - roughness
 	CreateWICTextureFromFile(
 		Graphics::Device.Get(),
 		Graphics::Context.Get(),
-		L"Assets/Textures/RoadLines.png",
+		L"Assets/Textures/Planks_r.png",
 		0,
-		roadLinesTexture.GetAddressOf());
+		planksTextureR.GetAddressOf());
+
+	// Stones texture
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		L"Assets/Textures/Stones.png",
+		0,
+		stonesTexture.GetAddressOf());
+
+	// Stones texture - roughness
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		L"Assets/Textures/Stones_r.png",
+		0,
+		stonesTextureR.GetAddressOf());
+
+	// Tiles texture
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		L"Assets/Textures/Tiles.png",
+		0,
+		tilesTexture.GetAddressOf());
+
+	// Tiles texture - roughness
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		L"Assets/Textures/Tiles_r.png",
+		0,
+		tilesTextureR.GetAddressOf());
 }
 
 
@@ -249,10 +290,12 @@ void Game::LoadMaterials()
 	materials = {
 		// Bricks
 		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
-		// Scaled/offset planks
+		// Planks
 		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
-		// Tinted bricks
-		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(0.25f, 0.25f, 1.0f, 1.0f)),
+		// Stones
+		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
+		// Tiles
+		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
 		// Detail
 		std::make_shared<Material>(vertexShader, detailPS, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
 		// Normals display
@@ -266,23 +309,26 @@ void Game::LoadMaterials()
 	// Assign textures
 	{
 		materials[0]->AddTexture(0, bricksTexture);
+		materials[0]->AddTexture(1, bricksTextureR);
 		materials[0]->AddSampler(0, sampler);
 
 		materials[1]->AddTexture(0, planksTexture);
+		materials[1]->AddTexture(1, planksTextureR);
 		materials[1]->AddSampler(0, sampler);
 
-		materials[2]->AddTexture(0, bricksTexture);
+		materials[2]->AddTexture(0, stonesTexture);
+		materials[2]->AddTexture(1, stonesTextureR);
 		materials[2]->AddSampler(0, sampler);
 
-		materials[3]->AddTexture(0, planksTexture);
-		materials[3]->AddTexture(1, roadLinesTexture);
+		materials[3]->AddTexture(0, tilesTexture);
+		materials[3]->AddTexture(1, tilesTextureR);
 		materials[3]->AddSampler(0, sampler);
 	}
 
 	// Apply scaling/offset
 	{
-		materials[1]->SetTextureScale(DirectX::XMFLOAT2(5.0f, 5.0f));
-		materials[1]->SetTextureOffset(DirectX::XMFLOAT2(0.5f, 0.5f));
+		materials[0]->SetTextureScale(DirectX::XMFLOAT2(2.0f, 2.0f));
+		materials[0]->SetTextureOffset(DirectX::XMFLOAT2(0.5f, 0.5f));
 	}
 }
 
@@ -293,7 +339,7 @@ void Game::LoadMaterials()
 void Game::CreateEntities()
 {
 	unsigned int gridWidth = (unsigned int)meshes.size();
-	unsigned int gridHeight = 3;
+	unsigned int gridHeight = 1;
 	float gridSpacing = 3.0f;
 	float gridXOffset = -(float)(gridWidth - 1) * gridSpacing * 0.5f;
 	float gridYOffset = -(float)(gridHeight - 1) * gridSpacing * 0.5f;
@@ -301,9 +347,7 @@ void Game::CreateEntities()
 	/* Since the entity list is being auto-generated, we need some
 	 * way to define which one uses which material */
 	unsigned int materialIndices[] = {
-		4, 4, 4, 4, 4, 4, 4,
-		5, 5, 5, 5, 5, 5, 5,
-		0, 1, 2, 6, 0, 3, 1
+		0, 1, 1, 2, 2, 2, 3
 	};
 
 	unsigned int i = 0; // Track the index of the entity being made
@@ -349,6 +393,82 @@ void Game::CreateCameras()
 
 
 // --------------------------------------------------------
+// Initializes data for lights
+// --------------------------------------------------------
+void Game::CreateLights()
+{
+	lightAmbient = XMFLOAT4(0.1f, 0.15f, 0.18f, 1.0f);
+
+	// Create first light
+	{
+		Light newLight = {};
+		newLight.Type = LIGHT_TYPE_DIRECTIONAL;
+		newLight.Color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+		newLight.Intensity = 1.0f;
+		// Set light direction (must be normalized)
+		XMVECTOR vDir = XMVectorSet(-0.1f, -1.0f, 0.5f, 0.0f);
+		vDir = XMVector3Normalize(vDir);
+		XMStoreFloat3(&newLight.Direction, vDir);
+		// Add light to list
+		lights.push_back(newLight);
+	}
+
+	// Create second light
+	{
+		Light newLight = {};
+		newLight.Type = LIGHT_TYPE_DIRECTIONAL;
+		newLight.Color = XMFLOAT3(1.0f, 0.0f, 0.0f);
+		newLight.Intensity = 1.25f;
+		// Set light direction (must be normalized)
+		XMVECTOR vDir = XMVectorSet(1.0f, 0.0f, 0.5f, 0.0f);
+		vDir = XMVector3Normalize(vDir);
+		XMStoreFloat3(&newLight.Direction, vDir);
+		// Add light to list
+		lights.push_back(newLight);
+	}
+
+	// Create third light
+	{
+		Light newLight = {};
+		newLight.Type = LIGHT_TYPE_POINT;
+		newLight.Color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+		newLight.Intensity = 1.5f;
+		newLight.Position = XMFLOAT3(-1.5f, 0.0f, 0.0f);
+		newLight.Range = 10.0f;
+		// Add light to list
+		lights.push_back(newLight);
+	}
+
+	// Create fourth light
+	{
+		Light newLight = {};
+		newLight.Type = LIGHT_TYPE_POINT;
+		newLight.Color = XMFLOAT3(0.0f, 1.0f, 0.0f);
+		newLight.Intensity = 1.25f;
+		newLight.Position = XMFLOAT3(1.5f, 0.0f, 0.0f);
+		newLight.Range = 10.0f;
+		// Add light to list
+		lights.push_back(newLight);
+	}
+
+	// Create fifth light
+	{
+		Light newLight = {};
+		newLight.Type = LIGHT_TYPE_SPOT;
+		newLight.Color = XMFLOAT3(0.0f, 0.0f, 1.0f);
+		newLight.Intensity = 3.0f;
+		newLight.Position = XMFLOAT3(6.0f, 1.0f, 0.0f);
+		newLight.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
+		newLight.Range = 10.0f;
+		newLight.SpotInnerAngle = XM_PI * 0.2f;
+		newLight.SpotOuterAngle = XM_PI * 0.25f;
+		// Add light to list
+		lights.push_back(newLight);
+	}
+}
+
+
+// --------------------------------------------------------
 // Handle resizing to match the new window size
 //  - Eventually, we'll want to update our 3D camera
 // --------------------------------------------------------
@@ -373,6 +493,12 @@ void Game::Update(float deltaTime, float totalTime)
 	// Update active camera
 	cameras[activeCameraIndex]->Update(deltaTime);
 
+	// Continuously rotate entities for testing
+	for (unsigned int i = 0; i < entities.size(); i++)
+	{
+		entities[i]->GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
+	}
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
@@ -389,7 +515,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
 		// Clear the back buffer (erase what's on screen) and depth buffer
-		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backgroundColor);
+		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(), backgroundColor);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
@@ -437,6 +563,7 @@ void Game::DrawEntity(std::shared_ptr<Entity> entity, float totalTime)
 		// Set up the buffer data struct
 		VertexShaderConstData externalData = {};
 		externalData.world = entity->GetTransform()->GetWorldMatrix();
+		externalData.worldInvTranspose = entity->GetTransform()->GetWorldInverseTransposeMatrix();
 		externalData.view = cameras[activeCameraIndex]->GetViewMatrix();
 		externalData.projection = cameras[activeCameraIndex]->GetProjectionMatrix();
 
@@ -454,7 +581,15 @@ void Game::DrawEntity(std::shared_ptr<Entity> entity, float totalTime)
 		externalData.textureScale = entity->GetMaterial()->GetTextureScale();
 		externalData.textureOffset = entity->GetMaterial()->GetTextureOffset();
 		externalData.tint = entity->GetMaterial()->GetTint();
+		externalData.cameraPosition = cameras[activeCameraIndex]->GetTransform()->GetPosition();
 		externalData.time = totalTime;
+		externalData.lightAmbient = lightAmbient;
+
+		// Fill out as many lights as possible
+		for (unsigned int i = 0; i < lights.size() && i < 5; i++)
+		{
+			memcpy(&externalData.lights[i], &lights[i], sizeof(Light));
+		}
 
 		Graphics::FillAndBindNextConstantBuffer(
 			&externalData,
@@ -506,11 +641,10 @@ void Game::BuildUI()
 	ImGui::Text("Window client size: %dx%d", Window::Width(), Window::Height());
 
 	// Color picker for current window background
-	ImGui::ColorEdit4("Background color", backgroundColor);
+	ImGui::ColorEdit4("Background color", &backgroundColor[0]);
 
-	// Toggles the demo window
-	if (ImGui::Button("Toggle ImGui demo window"))
-		showDemoWindow = !showDemoWindow;
+	// Color picker for lighting ambient color
+	ImGui::ColorEdit4("Ambient color", &lightAmbient.x);
 
 	// Show camera data and swapping
 	if (ImGui::TreeNode("Cameras"))
@@ -567,11 +701,18 @@ void Game::BuildUI()
 		ImGui::TreePop();
 	}
 
-	ImGui::End(); // Ends the current window
+	// Show a panel for modifying light data
+	if (ImGui::TreeNode("Lights"))
+	{
+		for (unsigned int i = 0; i < lights.size(); i++)
+		{
+			BuildLightUI(&lights[i], i);
+		}
 
-	// Show the demo window
-	if (showDemoWindow)
-		ImGui::ShowDemoWindow();
+		ImGui::TreePop();
+	}
+
+	ImGui::End(); // Ends the current window
 }
 
 
@@ -642,6 +783,25 @@ void Game::BuildEntityUI(Entity* entity, int index)
 
 	// Add label for debug information
 	ImGui::Text("Mesh Index Count: %d", entity->GetMesh()->GetIndexBufferCount());
+
+	ImGui::TreePop();
+}
+
+
+// Build a UI to control light data
+void Game::BuildLightUI(Light* light, int index)
+{
+	if (!ImGui::TreeNode(std::format("Light {}", index).c_str()))
+		return;
+
+	ImGui::ColorEdit3("Color", &light->Color.x);
+	ImGui::DragFloat("Intensity", &light->Intensity, 0.1f);
+
+	ImGui::DragFloat3("Position", &light->Position.x, 0.1f);
+	ImGui::DragFloat("Range", &light->Range, 0.1f);
+
+	ImGui::DragFloat("Spot Inner Angle", &light->SpotInnerAngle, 0.1f);
+	ImGui::DragFloat("Spot Outer Angle", &light->SpotOuterAngle, 0.1f);
 
 	ImGui::TreePop();
 }

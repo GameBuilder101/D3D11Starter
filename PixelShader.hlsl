@@ -1,44 +1,46 @@
-
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	float4 screenPosition   : SV_POSITION;
-    float3 normal           : NORMAL;
-    float2 uv               : TEXCOORD;
-};
+#include "LitSurface.hlsli"
 
 cbuffer ExternalData : register(b0)
 {
     float2 textureScale;
     float2 textureOffset;
     float4 tint;
+    float3 cameraPosition;
     float time;
+    float4 lightAmbient;
+    
+    Light lights[MAX_LIGHTS]; // All lights shining on this material
 }
 
-Texture2D AlbedoMap : register(t0); // "t" registers are for textures
-SamplerState MainSampler : register(s0); // "s" registers are for samplers
+// "t" registers are for textures
+Texture2D AlbedoMap : register(t0); // Base color
+Texture2D RoughnessMap : register(t1); // Affects specular
 
-// --------------------------------------------------------
-// The entry point (main method) for our pixel shader
-// 
-// - Input is the data coming down the pipeline (defined by the struct)
-// - Output is a single color (float4)
-// - Has a special semantic (SV_TARGET), which means 
-//    "put the output of this into the current render target"
-// - Named "main" because that's the default the shader compiler looks for
-// --------------------------------------------------------
+// "s" registers are for samplers
+SamplerState MainSampler : register(s0);
+
+// Default entry point for shader compiler (input is recieved from vertex shader, output is a single color)
 float4 main(VertexToPixel input) : SV_TARGET
 {
-    // Calculate scaled/offset UVs
-    float2 uv = input.uv * textureScale + textureOffset;
+    // Since inputs are linearly interpolated, they do not remain normalized. Do this to fix
+    input.worldNormal = normalize(input.worldNormal);
     
-    float4 albedo = AlbedoMap.Sample(MainSampler, uv);
+    // Calculate scaled/offset UVs
+    float2 transformedUVs = input.uv * textureScale + textureOffset;
+    
+    // Sample albedo map
+    float4 albedo = AlbedoMap.Sample(MainSampler, transformedUVs);
     // Apply color tint
     albedo *= tint;
     
-    return albedo;
+    // Sample roughness map (scaled by 2 because test textures are too dull for previewing)
+    float roughness = saturate(AlbedoMap.Sample(MainSampler, transformedUVs).r * 4.0f);
+    
+    // Perform lighting calculations using input values
+    float3 totalLight = CalcTotalLight(input,
+        albedo, roughness,
+        cameraPosition,
+        lightAmbient, lights);
+    
+    return float4(totalLight, albedo.a);
 }
