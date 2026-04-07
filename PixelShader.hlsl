@@ -1,4 +1,5 @@
 #include "LitSurface.hlsli"
+#include "NormalMapping.hlsli"
 
 cbuffer ExternalData : register(b0)
 {
@@ -14,7 +15,8 @@ cbuffer ExternalData : register(b0)
 
 // "t" registers are for textures
 Texture2D AlbedoMap : register(t0); // Base color
-Texture2D RoughnessMap : register(t1); // Affects specular
+Texture2D NormalMap : register(t1); // Affects normals
+Texture2D RoughnessMap : register(t2); // Affects specular
 
 // "s" registers are for samplers
 SamplerState MainSampler : register(s0);
@@ -33,8 +35,16 @@ float4 main(VertexToPixel input) : SV_TARGET
     // Apply color tint
     albedo *= tint;
     
-    // Sample roughness map (scaled by 2 because test textures are too dull for previewing)
+    // Sample and unpack normal map
+    float3 tanSpaceNormal = UnpackNormal(NormalMap.Sample(MainSampler, transformedUVs).rgb);
+    // Transform to retrieve actual direction relative to surface
+    float3 normal = TransformNormal(tanSpaceNormal, input.worldNormal, input.worldTangent);
+    
+    // Sample roughness map (scaled by 4 because test textures are too dull for previewing)
     float roughness = saturate(AlbedoMap.Sample(MainSampler, transformedUVs).r * 4.0f);
+    
+    // Before performing lighting, provide the new mapped normals instead
+    input.worldNormal = normal;
     
     // Perform lighting calculations using input values
     float3 totalLight = CalcTotalLight(input,

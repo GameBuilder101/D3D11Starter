@@ -9,6 +9,7 @@
 #include "Entity.h"
 #include "Camera.h"
 #include "Light.h"
+#include "Sky.h"
 
 class Game
 {
@@ -36,6 +37,7 @@ private:
 	void CreateEntities();
 	void CreateCameras();
 	void CreateLights();
+	void CreateSky();
 
 	// Drawing helper methods
 	void DrawEntity(std::shared_ptr<Entity> entity, float totalTime);
@@ -43,13 +45,17 @@ private:
 	// Loaded asset data
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksTexture; // Albedo
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksTextureN; // Normal
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksTextureR; // Roughness
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> planksTexture; // Albedo
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> planksTextureN; // Normal
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> planksTextureR; // Roughness
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rocksTexture; // Albedo
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rocksTextureN; // Normal
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rocksTextureR; // Roughness
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stonesTexture; // Albedo
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stonesTextureN; // Normal
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stonesTextureR; // Roughness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tilesTexture; // Albedo
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tilesTextureR; // Roughness
 
 	// Shared input layout for shaders
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
@@ -65,9 +71,11 @@ private:
 	int activeCameraIndex;
 
 	// Lighting data
-	float backgroundColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f }; // Background screen clear color
 	DirectX::XMFLOAT4 lightAmbient;
 	std::vector<Light> lights; // All active lights in the scene
+
+	// Created and loaded sky data
+	std::shared_ptr<Sky> sky;
 
 	// UI helper functions
 	void UpdateImGui(float deltaTime, float totalTime);
@@ -77,4 +85,3 @@ private:
 	void BuildEntityUI(Entity* entity, int index);
 	void BuildLightUI(Light* light, int index);
 };
-

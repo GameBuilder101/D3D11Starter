@@ -68,7 +68,7 @@ float3 CalcSpecularTerm(VertexToPixel input,
     float RdotC = saturate(dot(reflection, dirToCamera));
     
     // Apply power to increase shininess
-    float shine = pow(RdotC, 256);
+    float shine = pow(RdotC, 128);
     
     return shine * roughness * // Multiply by roughness map value
         light.color * light.intensity * // Tint to match light color
@@ -132,7 +132,11 @@ float3 CalcTotalLight(VertexToPixel input,
         float falloff = CalculateFalloffTerm(input, lights[i]);
         
         diffuse += CalcDiffuseTerm(input, albedo, lights[i]) * falloff;
-        specular += CalcSpecularTerm(input, albedo, roughness, cameraPosition, lights[i]) * falloff;
+        
+        float3 specularTerm = CalcSpecularTerm(input, albedo, roughness, cameraPosition, lights[i]) * falloff;
+        // Cut specular contribution if diffuse is zero
+        specularTerm *= any(diffuse);
+        specular += specularTerm;
     }
     
     return ambient + diffuse + specular;
