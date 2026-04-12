@@ -44,18 +44,22 @@ private:
 
 	// Loaded asset data
 	std::vector<std::shared_ptr<Mesh>> meshes;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksTexture; // Albedo
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksTextureN; // Normal
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bricksTextureR; // Roughness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> planksTexture; // Albedo
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> planksTextureN; // Normal
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> planksTextureR; // Roughness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rocksTexture; // Albedo
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rocksTextureN; // Normal
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rocksTextureR; // Roughness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stonesTexture; // Albedo
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stonesTextureN; // Normal
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stonesTextureR; // Roughness
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneTexture; // Albedo
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneTextureN; // Normal
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneTextureR; // Roughness
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneTextureM; // Metalness
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTexture; // Albedo
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTextureN; // Normal
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTextureR; // Roughness
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTextureM; // Metalness
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treadPlateTexture; // Albedo
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treadPlateTextureN; // Normal
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treadPlateTextureR; // Roughness
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treadPlateTextureM; // Metalness
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeTexture; // Albedo
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeTextureN; // Normal
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeTextureR; // Roughness
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeTextureM; // Metalness
 
 	// Shared input layout for shaders
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;

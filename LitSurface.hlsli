@@ -2,6 +2,7 @@
 #define __LIT_SURFACE__
 
 #include "ShaderIncludes.hlsli"
+#include "MathConstants.hlsli"
 
 #define LIGHT_TYPE_DIRECTIONAL 0
 #define LIGHT_TYPE_POINT 1
@@ -35,44 +36,88 @@ float3 LightDir(VertexToPixel input, Light light)
     }
 }
 
-// Calculates extremely primitive global illumination approximation
-float3 CalcAmbientTerm(float4 albedo, float4 lightAmbient)
-{
-    return (albedo * lightAmbient).rgb;
-}
-
 // Calculates diffuse term given a set of lights
-float3 CalcDiffuseTerm(VertexToPixel input, float4 albedo, Light light)
+float3 CalcDiffuseTerm(VertexToPixel input, float3 normal, Light light)
 {
-    // Calculates direction from world position to light position
-    float3 dirToLight = normalize(light.position - input.worldPosition);
-    
+    // Calculate direction of the light itself
     float3 lightDir = LightDir(input, light);
     
-    return saturate(dot(input.worldNormal, -lightDir)) * // Diffuse intensity, clamped to 0 - 1 range
-        light.color * light.intensity * // Multiply light color
-        albedo.rgb; // Pick up surface color
+    // Diffuse intensity, clamped to 0 - 1 range
+    return saturate(dot(normal, -lightDir));
+}
+
+float3 CalcSpecularColor(float4 albedo, float metalness)
+{
+    // Specular color is constant for non-metals, but tinted for metals
+    return lerp(0.04f, albedo.rgb, metalness);
+}
+
+// GGX (Trowbridge-Reitz)
+float NormalDistribution(float3 normal, float3 halfAngle, float roughness)
+{
+    float nDotH = saturate(dot(normal, halfAngle));
+    float nDotH2 = nDotH * nDotH;
+    float a = roughness * roughness; // Remap roughness for perceptual linearity
+    float a2 = max(a * a, 0.0000001f); // Clamp min to avoid 0 division
+    float denominator = nDotH2 * (a2 - 1.0f) + 1.0f;
+    
+    // Final distribution
+    return a2 / (PI * denominator * denominator);
+}
+
+// Shlick approximation
+float3 Fresenel(float3 viewDir, float3 halfAngle, float3 specColor)
+{
+    float vDotH = saturate(dot(viewDir, halfAngle));
+    
+    // Final fresnel approximation
+    return specColor + (1.0f - specColor) * pow(1.0f - vDotH, 5.0f);
+}
+
+// Shlick-GGX
+float GeometricShadowing(float3 normal, float3 viewDir, float roughness)
+{
+    // End result of roughness remapping
+    float k = pow(roughness + 1.0f, 2.0f) / 8.0f;
+    float nDotV = saturate(dot(normal, viewDir));
+    
+    // Final geometric shadowing
+    return 1.0f / (nDotV * (1.0f - k) + k);
+}
+
+// Combines the three components of the Cook-Terrance BRDF
+float3 MicrofacetBRDF(float3 normal, float3 lightDir, float3 viewDir, float roughness, float3 specColor)
+{
+    // Angle between view and light
+    float3 halfAngle = normalize(viewDir + lightDir);
+    
+    float d = NormalDistribution(normal, halfAngle, roughness);
+    float3 f = Fresenel(viewDir, halfAngle, specColor);
+    float g = GeometricShadowing(normal, viewDir, roughness) *
+        GeometricShadowing(normal, lightDir, roughness);
+    
+    float3 specularResult = (d * f * g) / 4.0f;
+    return specularResult * saturate(dot(normal, lightDir));
 }
 
 // Calculates specular term given a set of lights and camera position
-float3 CalcSpecularTerm(VertexToPixel input,
-    float4 albedo, float roughness,
-    float3 cameraPosition, Light light)
+float3 CalcSpecularTerm(
+    VertexToPixel input,
+    float4 albedo,
+    float3 normal,
+    float roughness,
+    float metalness,
+    float3 cameraPosition,
+    Light light)
 {
     // Direction from world position to camera position
-    float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
-    float3 lightDir = LightDir(input, light);
+    float3 viewDir = normalize(cameraPosition - input.worldPosition);
+    // Calculate direction of the light itself
+    float3 lightDir = -LightDir(input, light);
     
-    float3 reflection = reflect(lightDir, input.worldNormal);
-    // Calculate cosine between reflection and direction to viewing position
-    float RdotC = saturate(dot(reflection, dirToCamera));
+    float3 specColor = CalcSpecularColor(albedo, metalness);
     
-    // Apply power to increase shininess
-    float shine = pow(RdotC, 128);
-    
-    return shine * roughness * // Multiply by roughness map value
-        light.color * light.intensity * // Tint to match light color
-        albedo.rgb;
+    return MicrofacetBRDF(normal, lightDir, viewDir, roughness, specColor);
 }
 
 // Attenuates a point light, reaching zero at max range
@@ -116,30 +161,64 @@ float CalculateFalloffTerm(VertexToPixel input, Light light)
     }
 }
 
-// Calculates and adds up accumulated light from ambient, diffuse, and specular
-float3 CalcTotalLight(VertexToPixel input,
-    float4 albedo, float roughness,
-    float3 cameraPosition,
-    float4 lightAmbient, Light lights[MAX_LIGHTS])
+// Fix diffuse lighting to account for energy conservation
+float3 ConserveDiffuseEnergy(
+    float3 diffuse,
+    float3 fresnel,
+    float metalness)
 {
-    float3 ambient = CalcAmbientTerm(albedo, lightAmbient);
-    float3 diffuse;
-    float3 specular;
+    return diffuse * (1.0f - fresnel) * (1.0f - metalness);
+}
+
+// Calculates and adds up accumulated light from diffuse and specular
+float3 CalcTotalLight(
+    VertexToPixel input,
+    float4 albedo,
+    float3 normal,
+    float roughness,
+    float metalness,
+    float3 cameraPosition,
+    Light lights[MAX_LIGHTS])
+{
+    float3 totalLight;
     
     // Add up cumulatively from every light source
     for (uint i = 0; i < MAX_LIGHTS; i++)
     {
+        // Direction from world position to camera position
+        float3 viewDir = normalize(cameraPosition - input.worldPosition);
+        // Calculate direction of the light itself
+        float3 lightDir = -LightDir(input, lights[i]);
+        // Angle between view and light
+        float3 halfAngle = normalize(viewDir + lightDir);
+        
+        float3 specColor = CalcSpecularColor(albedo, metalness);
+        // Fresnel needed for energy conservation in addition to specular
+        float3 fresnel = Fresenel(viewDir, halfAngle, specColor);
+        
+        float3 diffuse = CalcDiffuseTerm(input, normal, lights[i]);
+        float3 specular = CalcSpecularTerm(
+            input,
+            albedo,
+            normal,
+            roughness,
+            metalness,
+            cameraPosition,
+            lights[i]);
+        
+        // Adjust diffuse for physical accuracy
+        diffuse = ConserveDiffuseEnergy(diffuse, fresnel, metalness);
+        
+        // Light falloff
         float falloff = CalculateFalloffTerm(input, lights[i]);
         
-        diffuse += CalcDiffuseTerm(input, albedo, lights[i]) * falloff;
-        
-        float3 specularTerm = CalcSpecularTerm(input, albedo, roughness, cameraPosition, lights[i]) * falloff;
-        // Cut specular contribution if diffuse is zero
-        specularTerm *= any(diffuse);
-        specular += specularTerm;
+        // Combine the diffuse and specular with light properties
+        totalLight += (diffuse * albedo.rgb + specular) *
+            lights[i].color * lights[i].intensity * falloff;
+
     }
     
-    return ambient + diffuse + specular;
+    return totalLight;
 }
 
 #endif

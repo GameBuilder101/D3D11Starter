@@ -16,7 +16,8 @@ cbuffer ExternalData : register(b0)
 // "t" registers are for textures
 Texture2D AlbedoMap : register(t0); // Base color
 Texture2D NormalMap : register(t1); // Affects normals
-Texture2D RoughnessMap : register(t2); // Affects specular
+Texture2D RoughnessMap : register(t2); // Affects roughness
+Texture2D MetalnessMap : register(t3); // Affects metalness
 
 // "s" registers are for samplers
 SamplerState MainSampler : register(s0);
@@ -32,6 +33,8 @@ float4 main(VertexToPixel input) : SV_TARGET
     
     // Sample albedo map
     float4 albedo = AlbedoMap.Sample(MainSampler, transformedUVs);
+    // Reverse the gamma correction baked into the albedo texture
+    albedo.rgb = pow(albedo.rgb, 2.2f);
     // Apply color tint
     albedo *= tint;
     
@@ -40,17 +43,23 @@ float4 main(VertexToPixel input) : SV_TARGET
     // Transform to retrieve actual direction relative to surface
     float3 normal = TransformNormal(tanSpaceNormal, input.worldNormal, input.worldTangent);
     
-    // Sample roughness map (scaled by 4 because test textures are too dull for previewing)
-    float roughness = saturate(AlbedoMap.Sample(MainSampler, transformedUVs).r * 4.0f);
+    // Sample roughness map
+    float roughness = RoughnessMap.Sample(MainSampler, transformedUVs).r;
     
-    // Before performing lighting, provide the new mapped normals instead
-    input.worldNormal = normal;
+    // Sample metalness map
+    float metalness = MetalnessMap.Sample(MainSampler, transformedUVs).r;
     
     // Perform lighting calculations using input values
-    float3 totalLight = CalcTotalLight(input,
-        albedo, roughness,
+    float3 totalLight = CalcTotalLight(
+        input,
+        albedo,
+        normal,
+        roughness,
+        metalness,
         cameraPosition,
-        lightAmbient, lights);
+        lights);
+    // Apply gamma correction
+    totalLight.rgb = pow(totalLight.rgb, 1.0f / 2.2f);
     
     return float4(totalLight, albedo.a);
 }

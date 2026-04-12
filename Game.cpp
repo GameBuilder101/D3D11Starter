@@ -98,101 +98,125 @@ void Game::LoadMeshes()
 // --------------------------------------------------------
 void Game::LoadTextures()
 {
-	// Bricks texture
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(), // Context needed for mipmap creation
-		L"Assets/Textures/Bricks.png", // File path is automatically relative
-		0, // ID3D11Texture2D pointer, not used
-		bricksTexture.GetAddressOf());
+	{ // Cobblestone texture
+		CreateWICTextureFromFile( // Albedo
+			Graphics::Device.Get(),
+			Graphics::Context.Get(), // Context needed for mipmap creation
+			L"Assets/Textures/Cobblestone.png", // File path is automatically relative
+			0, // ID3D11Texture2D pointer, not used
+			cobblestoneTexture.GetAddressOf());
 
-	// Bricks texture - normal
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Bricks_n.png",
-		0,
-		bricksTextureN.GetAddressOf());
+		CreateWICTextureFromFile( // Normal
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Cobblestone_n.png",
+			0,
+			cobblestoneTextureN.GetAddressOf());
 
-	// Bricks texture - roughness
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Bricks_r.png",
-		0,
-		bricksTextureR.GetAddressOf());
+		CreateWICTextureFromFile( // Roughness
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Cobblestone_r.png",
+			0,
+			cobblestoneTextureR.GetAddressOf());
 
-	// Planks texture
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Planks.png",
-		0,
-		planksTexture.GetAddressOf());
+		CreateWICTextureFromFile( // Metalness
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Cobblestone_m.png",
+			0,
+			cobblestoneTextureM.GetAddressOf());
+	}
 
-	// Planks texture - normal
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Planks_n.png",
-		0,
-		planksTextureN.GetAddressOf());
+	{ // Wood texture
+		CreateWICTextureFromFile( // Albedo
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Wood.png",
+			0,
+			woodTexture.GetAddressOf());
 
-	// Planks texture - roughness
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Planks_r.png",
-		0,
-		planksTextureR.GetAddressOf());
+		CreateWICTextureFromFile( // Normal
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Wood_n.png",
+			0,
+			woodTextureN.GetAddressOf());
 
-	// Rocks texture
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Rocks.png",
-		0,
-		rocksTexture.GetAddressOf());
+		CreateWICTextureFromFile( // Roughness
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Wood_r.png",
+			0,
+			woodTextureR.GetAddressOf());
 
-	// Rocks texture - normal
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Rocks_n.png",
-		0,
-		rocksTextureN.GetAddressOf());
+		CreateWICTextureFromFile( // Metalness
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Wood_m.png",
+			0,
+			woodTextureM.GetAddressOf());
+	}
 
-	// Rocks texture - roughness
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Rocks_r.png",
-		0,
-		rocksTextureR.GetAddressOf());
+	{ // Tread plate texture
+		CreateWICTextureFromFile( // Albedo
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/TreadPlate.png",
+			0,
+			treadPlateTexture.GetAddressOf());
 
-	// Stones texture
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Stones.png",
-		0,
-		stonesTexture.GetAddressOf());
+		CreateWICTextureFromFile( // Normal
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/TreadPlate_n.png",
+			0,
+			treadPlateTextureN.GetAddressOf());
 
-	// Stones texture - normal
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Stones_n.png",
-		0,
-		stonesTextureN.GetAddressOf());
+		CreateWICTextureFromFile( // Roughness
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/TreadPlate_r.png",
+			0,
+			treadPlateTextureR.GetAddressOf());
 
-	// Stones texture - roughness
-	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
-		L"Assets/Textures/Stones_r.png",
-		0,
-		stonesTextureR.GetAddressOf());
+		CreateWICTextureFromFile( // Metalness
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/TreadPlate_m.png",
+			0,
+			treadPlateTextureM.GetAddressOf());
+	}
+
+	{ // Bronze texture
+		CreateWICTextureFromFile( // Albedo
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Bronze.png",
+			0,
+			bronzeTexture.GetAddressOf());
+
+		CreateWICTextureFromFile( // Normal
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Bronze_n.png",
+			0,
+			bronzeTextureN.GetAddressOf());
+
+		CreateWICTextureFromFile( // Roughness
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Bronze_r.png",
+			0,
+			bronzeTextureR.GetAddressOf());
+
+		CreateWICTextureFromFile( // Metalness
+			Graphics::Device.Get(),
+			Graphics::Context.Get(),
+			L"Assets/Textures/Bronze_m.png",
+			0,
+			bronzeTextureM.GetAddressOf());
+	}
 }
 
 
@@ -314,36 +338,40 @@ void Game::LoadMaterials()
 	/* Finally, create the materials. These will store the
 	 * shaders that were just loaded */
 	materials = {
-		// Bricks
+		// Cobblestone
 		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
-		// Planks
+		// Wood
 		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
-		// Rocks
+		// Tread plate
 		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)),
-		// Stones
+		// Bronze
 		std::make_shared<Material>(vertexShader, pixelShader, DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f))
 	};
 
 	// Assign textures
 	{
-		materials[0]->AddTexture(0, bricksTexture);
-		materials[0]->AddTexture(1, bricksTextureN);
-		materials[0]->AddTexture(2, bricksTextureR);
+		materials[0]->AddTexture(0, cobblestoneTexture);
+		materials[0]->AddTexture(1, cobblestoneTextureN);
+		materials[0]->AddTexture(2, cobblestoneTextureR);
+		materials[0]->AddTexture(3, cobblestoneTextureM);
 		materials[0]->AddSampler(0, sampler);
 
-		materials[1]->AddTexture(0, planksTexture);
-		materials[1]->AddTexture(1, planksTextureN);
-		materials[1]->AddTexture(2, planksTextureR);
+		materials[1]->AddTexture(0, woodTexture);
+		materials[1]->AddTexture(1, woodTextureN);
+		materials[1]->AddTexture(2, woodTextureR);
+		materials[1]->AddTexture(3, woodTextureM);
 		materials[1]->AddSampler(0, sampler);
 
-		materials[2]->AddTexture(0, rocksTexture);
-		materials[2]->AddTexture(1, rocksTextureN);
-		materials[2]->AddTexture(2, rocksTextureR);
+		materials[2]->AddTexture(0, treadPlateTexture);
+		materials[2]->AddTexture(1, treadPlateTextureN);
+		materials[2]->AddTexture(2, treadPlateTextureR);
+		materials[2]->AddTexture(3, treadPlateTextureM);
 		materials[2]->AddSampler(0, sampler);
 
-		materials[3]->AddTexture(0, stonesTexture);
-		materials[3]->AddTexture(1, stonesTextureN);
-		materials[3]->AddTexture(2, stonesTextureR);
+		materials[3]->AddTexture(0, bronzeTexture);
+		materials[3]->AddTexture(1, bronzeTextureN);
+		materials[3]->AddTexture(2, bronzeTextureR);
+		materials[3]->AddTexture(3, bronzeTextureM);
 		materials[3]->AddSampler(0, sampler);
 	}
 }
@@ -363,7 +391,7 @@ void Game::CreateEntities()
 	/* Since the entity list is being auto-generated, we need some
 	 * way to define which one uses which material */
 	unsigned int materialIndices[] = {
-		0, 1, 1, 2, 2, 2, 3
+		0, 2, 3, 3, 2, 0, 1
 	};
 
 	unsigned int i = 0; // Track the index of the entity being made
@@ -758,9 +786,6 @@ void Game::BuildUI()
 	// Show a panel for modifying light data
 	if (ImGui::TreeNode("Lights"))
 	{
-		// Color picker for lighting ambient color
-		ImGui::ColorEdit4("Ambient color", &lightAmbient.x);
-
 		for (unsigned int i = 0; i < lights.size(); i++)
 		{
 			BuildLightUI(&lights[i], i);
