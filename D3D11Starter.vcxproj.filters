@@ -146,6 +146,9 @@
     <ClInclude Include="Sky.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShadowSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl">
@@ -158,6 +161,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="SkyVertex.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadowMapVertex.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

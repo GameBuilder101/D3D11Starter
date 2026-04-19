@@ -18,9 +18,11 @@ Texture2D AlbedoMap : register(t0); // Base color
 Texture2D NormalMap : register(t1); // Affects normals
 Texture2D RoughnessMap : register(t2); // Affects roughness
 Texture2D MetalnessMap : register(t3); // Affects metalness
+Texture2D ShadowMap : register(t4);
 
 // "s" registers are for samplers
 SamplerState MainSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s1);
 
 // Default entry point for shader compiler (input is recieved from vertex shader, output is a single color)
 float4 main(VertexToPixel input) : SV_TARGET
@@ -57,7 +59,9 @@ float4 main(VertexToPixel input) : SV_TARGET
         roughness,
         metalness,
         cameraPosition,
-        lights);
+        lights,
+        ShadowMap,
+        ShadowSampler);
     // Apply gamma correction
     totalLight.rgb = pow(totalLight.rgb, 1.0f / 2.2f);
     

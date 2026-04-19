@@ -161,6 +161,21 @@ float CalculateFalloffTerm(VertexToPixel input, Light light)
     }
 }
 
+// Returns 0 when in shadow map, 1 while not
+float GetShadowMapTerm(VertexToPixel input, Texture2D shadowMap, SamplerComparisonState samplerState)
+{
+    // Perform the perspective divide (divide by W) manually
+    input.shadowPosition /= input.shadowPosition.w;
+    
+    // Convert normalized device coordinates to usable UVs
+    float2 shadowUV = input.shadowPosition.xy * 0.5f + 0.5f;
+    shadowUV.y = 1 - shadowUV.y; // Flip the Y
+    
+    // Get distance from the light to the pixel, as well as the light to the nearest surface
+    float distToLight = input.shadowPosition.z;
+    return shadowMap.SampleCmpLevelZero(samplerState, shadowUV, distToLight).r;
+}
+
 // Fix diffuse lighting to account for energy conservation
 float3 ConserveDiffuseEnergy(
     float3 diffuse,
@@ -178,7 +193,9 @@ float3 CalcTotalLight(
     float roughness,
     float metalness,
     float3 cameraPosition,
-    Light lights[MAX_LIGHTS])
+    Light lights[MAX_LIGHTS],
+    Texture2D shadowMap,
+    SamplerComparisonState shadowSampler)
 {
     float3 totalLight;
     
@@ -212,9 +229,15 @@ float3 CalcTotalLight(
         // Light falloff
         float falloff = CalculateFalloffTerm(input, lights[i]);
         
+        float shadowMapTerm = 1.0f;
+        if (i == 0)
+        {
+            shadowMapTerm = GetShadowMapTerm(input, shadowMap, shadowSampler);
+        }
+        
         // Combine the diffuse and specular with light properties
         totalLight += (diffuse * albedo.rgb + specular) *
-            lights[i].color * lights[i].intensity * falloff;
+            lights[i].color * lights[i].intensity * falloff * shadowMapTerm;
 
     }
     

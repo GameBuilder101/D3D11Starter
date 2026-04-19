@@ -6,6 +6,9 @@ cbuffer ExternalData : register(b0)
     matrix worldInvTranspose;
     matrix view;
     matrix projection;
+	
+    matrix lightView;
+    matrix lightProjection;
 }
 
 // Default entry point for shader compiler (input is recieved from vertex data, output is passed down)
@@ -25,6 +28,10 @@ VertexToPixel main(VertexInput input)
 	
 	// World position is obtained by using only the world part of the wvp matrix
     output.worldPosition = mul(world, float4(input.localPosition, 1.0f)).xyz;
+	
+	// Transform where the pixel would be relative to the light WVP matrix
+    matrix shadowWVP = mul(lightProjection, mul(lightView, world));
+    output.shadowPosition = mul(shadowWVP, float4(input.localPosition, 1.0f));
 	
 	/* Input normals need to be transformed by the world inverse transpose matrix,
 	 * otherwise, translation or non-uniform scaling would break the normals */

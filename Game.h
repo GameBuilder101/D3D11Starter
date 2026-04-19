@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "Light.h"
 #include "Sky.h"
+#include "ShadowSettings.h"
 
 class Game
 {
@@ -37,6 +38,7 @@ private:
 	void CreateEntities();
 	void CreateCameras();
 	void CreateLights();
+	void CreateShadows();
 	void CreateSky();
 
 	// Drawing helper methods
@@ -77,6 +79,10 @@ private:
 	// Lighting data
 	DirectX::XMFLOAT4 lightAmbient;
 	std::vector<Light> lights; // All active lights in the scene
+
+	// Shadow data
+	ShadowSettings shadows;
+	void DrawShadowMap();
 
 	// Created and loaded sky data
 	std::shared_ptr<Sky> sky;
