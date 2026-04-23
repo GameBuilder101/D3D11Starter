@@ -149,6 +149,12 @@
     <ClInclude Include="ShadowSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PostProcessSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureSetResources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl">
@@ -164,6 +170,15 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="ShadowMapVertex.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="PostProcessVertex.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="BlurPostProcess.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="CAPostProcess.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -182,6 +197,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="MathConstants.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="PostProcessIncludes.hlsli">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

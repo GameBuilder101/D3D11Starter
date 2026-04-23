@@ -10,7 +10,9 @@
 #include "Camera.h"
 #include "Light.h"
 #include "Sky.h"
+#include "TextureSetResources.h"
 #include "ShadowSettings.h"
+#include "PostProcessSettings.h"
 
 class Game
 {
@@ -40,28 +42,15 @@ private:
 	void CreateLights();
 	void CreateShadows();
 	void CreateSky();
+	void CreatePostProcess();
+	void RecreatePPBuffer();
 
 	// Drawing helper methods
 	void DrawEntity(std::shared_ptr<Entity> entity, float totalTime);
 
 	// Loaded asset data
 	std::vector<std::shared_ptr<Mesh>> meshes;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneTexture; // Albedo
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneTextureN; // Normal
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneTextureR; // Roughness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneTextureM; // Metalness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTexture; // Albedo
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTextureN; // Normal
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTextureR; // Roughness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTextureM; // Metalness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treadPlateTexture; // Albedo
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treadPlateTextureN; // Normal
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treadPlateTextureR; // Roughness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> treadPlateTextureM; // Metalness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeTexture; // Albedo
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeTextureN; // Normal
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeTextureR; // Roughness
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeTextureM; // Metalness
+	TextureSetResources textures;
 
 	// Shared input layout for shaders
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
@@ -86,6 +75,10 @@ private:
 
 	// Created and loaded sky data
 	std::shared_ptr<Sky> sky;
+
+	// Post-process data
+	PostProcessSettings postProcess;
+	void DrawPostProcess();
 
 	// UI helper functions
 	void UpdateImGui(float deltaTime, float totalTime);

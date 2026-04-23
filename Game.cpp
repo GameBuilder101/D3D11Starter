@@ -38,6 +38,7 @@ Game::Game()
 	CreateLights();
 	CreateShadows();
 	CreateSky();
+	CreatePostProcess();
 
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -103,34 +104,36 @@ void Game::LoadMeshes()
 // --------------------------------------------------------
 void Game::LoadTextures()
 {
+	textures = TextureSetResources();
+
 	{ // Cobblestone texture
 		CreateWICTextureFromFile( // Albedo
 			Graphics::Device.Get(),
 			Graphics::Context.Get(), // Context needed for mipmap creation
 			L"Assets/Textures/Cobblestone.png", // File path is automatically relative
 			0, // ID3D11Texture2D pointer, not used
-			cobblestoneTexture.GetAddressOf());
+			textures.cobblestone.GetAddressOf());
 
 		CreateWICTextureFromFile( // Normal
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/Cobblestone_n.png",
 			0,
-			cobblestoneTextureN.GetAddressOf());
+			textures.cobblestoneN.GetAddressOf());
 
 		CreateWICTextureFromFile( // Roughness
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/Cobblestone_r.png",
 			0,
-			cobblestoneTextureR.GetAddressOf());
+			textures.cobblestoneR.GetAddressOf());
 
 		CreateWICTextureFromFile( // Metalness
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/Cobblestone_m.png",
 			0,
-			cobblestoneTextureM.GetAddressOf());
+			textures.cobblestoneM.GetAddressOf());
 	}
 
 	{ // Wood texture
@@ -139,28 +142,28 @@ void Game::LoadTextures()
 			Graphics::Context.Get(),
 			L"Assets/Textures/Wood.png",
 			0,
-			woodTexture.GetAddressOf());
+			textures.wood.GetAddressOf());
 
 		CreateWICTextureFromFile( // Normal
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/Wood_n.png",
 			0,
-			woodTextureN.GetAddressOf());
+			textures.woodN.GetAddressOf());
 
 		CreateWICTextureFromFile( // Roughness
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/Wood_r.png",
 			0,
-			woodTextureR.GetAddressOf());
+			textures.woodR.GetAddressOf());
 
 		CreateWICTextureFromFile( // Metalness
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/Wood_m.png",
 			0,
-			woodTextureM.GetAddressOf());
+			textures.woodM.GetAddressOf());
 	}
 
 	{ // Tread plate texture
@@ -169,28 +172,28 @@ void Game::LoadTextures()
 			Graphics::Context.Get(),
 			L"Assets/Textures/TreadPlate.png",
 			0,
-			treadPlateTexture.GetAddressOf());
+			textures.treadPlate.GetAddressOf());
 
 		CreateWICTextureFromFile( // Normal
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/TreadPlate_n.png",
 			0,
-			treadPlateTextureN.GetAddressOf());
+			textures.treadPlateN.GetAddressOf());
 
 		CreateWICTextureFromFile( // Roughness
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/TreadPlate_r.png",
 			0,
-			treadPlateTextureR.GetAddressOf());
+			textures.treadPlateR.GetAddressOf());
 
 		CreateWICTextureFromFile( // Metalness
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/TreadPlate_m.png",
 			0,
-			treadPlateTextureM.GetAddressOf());
+			textures.treadPlateM.GetAddressOf());
 	}
 
 	{ // Bronze texture
@@ -199,28 +202,28 @@ void Game::LoadTextures()
 			Graphics::Context.Get(),
 			L"Assets/Textures/Bronze.png",
 			0,
-			bronzeTexture.GetAddressOf());
+			textures.bronze.GetAddressOf());
 
 		CreateWICTextureFromFile( // Normal
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/Bronze_n.png",
 			0,
-			bronzeTextureN.GetAddressOf());
+			textures.bronzeN.GetAddressOf());
 
 		CreateWICTextureFromFile( // Roughness
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/Bronze_r.png",
 			0,
-			bronzeTextureR.GetAddressOf());
+			textures.bronzeR.GetAddressOf());
 
 		CreateWICTextureFromFile( // Metalness
 			Graphics::Device.Get(),
 			Graphics::Context.Get(),
 			L"Assets/Textures/Bronze_m.png",
 			0,
-			bronzeTextureM.GetAddressOf());
+			textures.bronzeM.GetAddressOf());
 	}
 }
 
@@ -355,28 +358,28 @@ void Game::LoadMaterials()
 
 	// Assign textures
 	{
-		materials[0]->AddTexture(0, cobblestoneTexture);
-		materials[0]->AddTexture(1, cobblestoneTextureN);
-		materials[0]->AddTexture(2, cobblestoneTextureR);
-		materials[0]->AddTexture(3, cobblestoneTextureM);
+		materials[0]->AddTexture(0, textures.cobblestone);
+		materials[0]->AddTexture(1, textures.cobblestoneN);
+		materials[0]->AddTexture(2, textures.cobblestoneR);
+		materials[0]->AddTexture(3, textures.cobblestoneM);
 		materials[0]->AddSampler(0, sampler);
 
-		materials[1]->AddTexture(0, woodTexture);
-		materials[1]->AddTexture(1, woodTextureN);
-		materials[1]->AddTexture(2, woodTextureR);
-		materials[1]->AddTexture(3, woodTextureM);
+		materials[1]->AddTexture(0, textures.wood);
+		materials[1]->AddTexture(1, textures.woodN);
+		materials[1]->AddTexture(2, textures.woodR);
+		materials[1]->AddTexture(3, textures.woodM);
 		materials[1]->AddSampler(0, sampler);
 
-		materials[2]->AddTexture(0, treadPlateTexture);
-		materials[2]->AddTexture(1, treadPlateTextureN);
-		materials[2]->AddTexture(2, treadPlateTextureR);
-		materials[2]->AddTexture(3, treadPlateTextureM);
+		materials[2]->AddTexture(0, textures.treadPlate);
+		materials[2]->AddTexture(1, textures.treadPlateN);
+		materials[2]->AddTexture(2, textures.treadPlateR);
+		materials[2]->AddTexture(3, textures.treadPlateM);
 		materials[2]->AddSampler(0, sampler);
 
-		materials[3]->AddTexture(0, bronzeTexture);
-		materials[3]->AddTexture(1, bronzeTextureN);
-		materials[3]->AddTexture(2, bronzeTextureR);
-		materials[3]->AddTexture(3, bronzeTextureM);
+		materials[3]->AddTexture(0, textures.bronze);
+		materials[3]->AddTexture(1, textures.bronzeN);
+		materials[3]->AddTexture(2, textures.bronzeR);
+		materials[3]->AddTexture(3, textures.bronzeM);
 		materials[3]->AddSampler(0, sampler);
 	}
 }
@@ -534,7 +537,7 @@ void Game::CreateShadows()
 	// Create default settings
 	shadows = ShadowSettings();
 
-	// Create the texture itself that will be the shaadow map. This
+	// Create the texture itself that will be the shadow map. This
 	// will then get uploaded and a depth/stencil view created
 	D3D11_TEXTURE2D_DESC shadowDesc = {};
 	shadowDesc.Width = shadows.resolution;
@@ -652,6 +655,91 @@ void Game::CreateSky()
 }
 
 
+// --------------------------------------------------------
+// Create post-process API objects
+// --------------------------------------------------------
+void Game::CreatePostProcess()
+{
+	RecreatePPBuffer();
+
+	// Clamp sampling. Don't need filtering, since the screen pixels should be 1-1
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	Graphics::Device->CreateSamplerState(&samplerDesc, postProcess.sampler.GetAddressOf());
+
+	// Load the vertex shader
+	ID3DBlob* vertexShaderBlob = LoadShaderBlob(L"PostProcessVertex.cso");
+	postProcess.vertexShader = LoadVertexShader(vertexShaderBlob);
+
+	// Load blur pixel shader
+	ID3DBlob* blurPixelShaderBlob = LoadShaderBlob(L"BlurPostProcess.cso");
+	postProcess.blurPixelShader = LoadPixelShader(blurPixelShaderBlob);
+	// Load chromatic aberration pixel shader
+	ID3DBlob* caPixelShaderBlob = LoadShaderBlob(L"CAPostProcess.cso");
+	postProcess.caPixelShader = LoadPixelShader(caPixelShaderBlob);
+}
+
+
+// --------------------------------------------------------
+// Creates the texture and render target for rendering
+// the scene to for use in post-processing.
+// --------------------------------------------------------
+void Game::RecreatePPBuffer()
+{
+	// Create the description of the texture being rendered into
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = Window::Width(); // Needs to be the size of the screen
+	textureDesc.Height = Window::Height(); // Needs to be the size of the screen
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.MipLevels = 1;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	// Create the description of the render target view
+	D3D11_RENDER_TARGET_VIEW_DESC renderTargetDesc = {};
+	renderTargetDesc.Format = textureDesc.Format;
+	renderTargetDesc.Texture2D.MipSlice = 0;
+	renderTargetDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+
+	// Main buffer creation
+	{
+		// Create the resource itself
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+		Graphics::Device->CreateTexture2D(&textureDesc, 0, texture.GetAddressOf());
+
+		Graphics::Device->CreateRenderTargetView(texture.Get(), &renderTargetDesc,
+			postProcess.buffer.ReleaseAndGetAddressOf());
+
+		// Create a default view to get access to the whole resource
+		Graphics::Device->CreateShaderResourceView(texture.Get(), 0,
+			postProcess.bufferSRV.ReleaseAndGetAddressOf());
+	}
+
+	// Second buffer creation (used to layer post-process effects)
+	{
+		// Create the resource itself
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> secondTexture;
+		Graphics::Device->CreateTexture2D(&textureDesc, 0, secondTexture.GetAddressOf());
+
+		Graphics::Device->CreateRenderTargetView(secondTexture.Get(), &renderTargetDesc,
+			postProcess.secondBuffer.ReleaseAndGetAddressOf());
+
+		// Create a default view to get access to the whole resource
+		Graphics::Device->CreateShaderResourceView(secondTexture.Get(), 0,
+			postProcess.secondBufferSRV.ReleaseAndGetAddressOf());
+	}
+}
+
+
 #pragma endregion
 
 
@@ -669,6 +757,9 @@ void Game::OnResize()
 	{
 		cameras[i]->UpdateProjectionMatrix(Window::AspectRatio());
 	}
+
+	// Need to rebuild render target to fit new screen size
+	RecreatePPBuffer();
 }
 
 
@@ -715,10 +806,17 @@ void Game::Draw(float deltaTime, float totalTime)
 		// Clear the back buffer (erase what's on screen) and depth buffer
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(), clearColor);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		// Clear the post-process render targets
+		Graphics::Context->ClearRenderTargetView(postProcess.buffer.Get(), clearColor);
+		Graphics::Context->ClearRenderTargetView(postProcess.secondBuffer.Get(), clearColor);
 	}
 
 	// Draw the shadow map first, as it's needed by the entities
 	DrawShadowMap();
+
+	// The entire scene will be rendered to a render target so post-process can be applied
+	// Occurs after drawing shadow map, otherwise it resets the render target
+	Graphics::Context->OMSetRenderTargets(1, postProcess.buffer.GetAddressOf(), Graphics::DepthBufferDSV.Get());
 
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
@@ -731,6 +829,9 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Draw the sky after geometry to avoid overdraw
 	sky->Draw(cameras[activeCameraIndex].get());
+
+	// Post scene render
+	DrawPostProcess();
 
 	ImGui::Render(); // Turns this frame’s UI into renderable triangles
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
@@ -820,9 +921,6 @@ void Game::DrawEntity(std::shared_ptr<Entity> entity, float totalTime)
 }
 
 
-// --------------------------------------------------------
-// Helper function for updating ImGui
-// --------------------------------------------------------
 void Game::DrawShadowMap()
 {
 	// Clear previous depth texture
@@ -876,6 +974,67 @@ void Game::DrawShadowMap()
 		Graphics::BackBufferRTV.GetAddressOf(),
 		Graphics::DepthBufferDSV.Get());
 	Graphics::Context->RSSetState(0);
+}
+
+
+void Game::DrawPostProcess()
+{
+	// Bind vertex shader and other resources re-used between effects
+	Graphics::Context->VSSetShader(postProcess.vertexShader.Get(), 0, 0);
+	//Graphics::Context->PSSetShaderResources(1, 1, Graphics::DepthBufferSRV.GetAddressOf());
+	Graphics::Context->PSSetSamplers(0, 1, postProcess.sampler.GetAddressOf());
+
+	float pixelWidth = 1.0f / Window::Width();
+	float pixelHeight = 1.0f / Window::Height();
+
+	// 1. Apply blur
+	{
+		// Draw to second buffer
+		Graphics::Context->OMSetRenderTargets(1, postProcess.secondBuffer.GetAddressOf(), 0);
+		// Read from first buffer (currently contains the rendered scene)
+		Graphics::Context->PSSetShaderResources(0, 1, postProcess.bufferSRV.GetAddressOf());
+
+		struct BlurPixelData
+		{
+			int blurRadius;
+			float pixelWidth;
+			float pixelHeight;
+		};
+
+		BlurPixelData externalData = {};
+		externalData.blurRadius = postProcess.blurRadius;
+		externalData.pixelWidth = pixelWidth;
+		externalData.pixelHeight = pixelHeight;
+
+		Graphics::FillAndBindNextConstantBuffer(&externalData, sizeof(externalData), D3D11_PIXEL_SHADER, 0);
+
+		Graphics::Context->PSSetShader(postProcess.blurPixelShader.Get(), 0, 0);
+		Graphics::Context->Draw(3, 0); // 3 vertices are needed for a tri
+	}
+
+	// 2. Apply chromatic aberration
+	{
+		// Draw to screen
+		Graphics::Context->OMSetRenderTargets(1, Graphics::BackBufferRTV.GetAddressOf(), 0);
+		// Read from second buffer (currently contains the blurred scene)
+		Graphics::Context->PSSetShaderResources(0, 1, postProcess.secondBufferSRV.GetAddressOf());
+
+		struct CAPixelData
+		{
+			XMFLOAT3 channelOffsets;
+			float padding;
+			XMFLOAT2 focalPoint;
+		};
+
+		CAPixelData externalData = {};
+		externalData.channelOffsets = postProcess.caChannelOffsets;
+		externalData.focalPoint = postProcess.caFocalPoint;
+
+		Graphics::FillAndBindNextConstantBuffer(&externalData, sizeof(externalData), D3D11_PIXEL_SHADER, 0);
+
+		Graphics::Context->PSSetShader(postProcess.caPixelShader.Get(), 0, 0);
+		Graphics::Context->Draw(3, 0); // 3 vertices are needed for a tri
+	}
 }
 
 
@@ -985,6 +1144,20 @@ void Game::BuildUI()
 		{
 			BuildLightUI(&lights[i], i);
 		}
+
+		ImGui::TreePop();
+	}
+
+	// Show a panel for modifying post-processing effects
+	if (ImGui::TreeNode("Post-Processing"))
+	{
+		ImGui::DragInt("Blur Radius", &postProcess.blurRadius, 1.0f, 0, 50);
+
+		ImGui::Text("Chromatic Aberration:");
+		ImGui::DragFloat("Red Channel", &postProcess.caChannelOffsets.x, 0.01f, 0.0f, 0.1f);
+		ImGui::DragFloat("Green Channel", &postProcess.caChannelOffsets.y, 0.01f, 0.0f, 0.1f);
+		ImGui::DragFloat("Blue Channel", &postProcess.caChannelOffsets.z, 0.01f, 0.0f, 0.1f);
+		ImGui::DragFloat2("Focal Point", &postProcess.caFocalPoint.x, 0.1f, 0.0f, 1.0f);
 
 		ImGui::TreePop();
 	}
